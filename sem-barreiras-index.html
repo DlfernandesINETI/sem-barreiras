@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sem Barreiras — Kit de Tecnologias Assistivas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4ff;
+  --white: #ffffff;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* HEADER */
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(79,142,247,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(167,139,250,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 99px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.2rem;
+  color: #a78bfa;
+}
+
+.header-logo { font-size: 3.5rem; margin-bottom: 0.8rem; }
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.header-title span {
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-sub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+  max-width: 340px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.header-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.2rem;
+}
+
+.tag {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 99px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+}
+
+/* CONTEÚDO */
+.content {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  margin-top: 1.8rem;
+}
+
+.section-title:first-child { margin-top: 0; }
+
+/* CARDS DAS FERRAMENTAS */
+.ferramenta-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 1.4rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+
+.ferramenta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-color: var(--accent);
+}
+
+.ferramenta-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.ferramenta-info { flex: 1; }
+
+.ferramenta-numero {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.2rem;
+}
+
+.ferramenta-nome {
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 0.3rem;
+}
+
+.ferramenta-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.ferramenta-publico {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.publico-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 99px;
+  background: var(--bg);
+}
+
+.ferramenta-arrow {
+  font-size: 1.2rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  display: inline-block;
+  margin-bottom: 0.4rem;
+}
+
+.status-ok { background: #dcfce7; color: #16a34a; }
+.status-dev { background: #fef3c7; color: #d97706; }
+.status-soon { background: #f1f5f9; color: #94a3b8; }
+
+/* RODAPÉ */
+.footer {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+}
+
+.footer strong { color: var(--text); }
+
+/* Cores por ferramenta */
+.f1 { background: #eff6ff; }
+.f1 .ferramenta-numero { color: #4f8ef7; }
+.f1:hover { border-color: #4f8ef7; }
+
+.f2 { background: #f5f3ff; }
+.f2 .ferramenta-numero { color: #a78bfa; }
+.f2:hover { border-color: #a78bfa; }
+
+.f3 { background: #f0fdf4; }
+.f3 .ferramenta-numero { color: #22c55e; }
+.f3:hover { border-color: #22c55e; }
+
+.f4 { background: #fff7ed; }
+.f4 .ferramenta-numero { color: #f59e0b; }
+.f4:hover { border-color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">🏛 UNICENTRO — Campus Irati</div>
+  <div class="header-logo">♿</div>
+  <h1 class="header-title">Sem <span>Barreiras</span></h1>
+  <p class="header-sub">Kit de Tecnologias Assistivas Digitais de Baixo Custo para estudantes com deficiência no ensino superior.</p>
+  <div class="header-tags">
+    <span class="tag">🆓 Gratuito</span>
+    <span class="tag">📱 Funciona no celular</span>
+    <span class="tag">🌐 Sem instalação</span>
+    <span class="tag">♿ Acessível</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="section-title">4 Ferramentas Assistivas</div>
+
+  <!-- Ferramenta 1 -->
+  <a class="ferramenta-card f1" href="legendas-ao-vivo.html">
+    <div class="ferramenta-icon f1">🎧</div>
+    <div class="ferramenta-info">
+      <div class="ferramenta-numero">Ferramenta 01</div>
+      <div class="status-badge status-ok">✅ Disponível</div>
+      <div class="ferramenta-nome">Legendas ao Vivo</div>
+      <div class="ferramenta-desc">Transcrição automática da fala do professor em tempo real, transmitida para o celular do aluno.</div>
+      <div class="ferramenta-publico">
+        <span class="publico-tag" style="background:#dbeafe;color:#1d4ed8">🦻 Surdos</span>
+        <span class="publico-tag" style="background:#dbeafe;color:#1d4ed8">🔇 Def. Auditiva</span>
+      </div>
+    </div>
+    <div class="ferramenta-arrow">→</div>
+  </a>
+
+  <!-- Ferramenta 2 -->
+  <a class="ferramenta-card f2" href="podcast-academico.html">
+    <div class="ferramenta-icon f2">🎙️</div>
+    <div class="ferramenta-info">
+      <div class="ferramenta-numero">Ferramenta 02</div>
+      <div class="status-badge status-ok">✅ Disponível</div>
+      <div class="ferramenta-nome">Podcast Acadêmico</div>
+      <div class="ferramenta-desc">Converte textos e materiais didáticos em áudio para ouvir como podcast.</div>
+      <div class="ferramenta-publico">
+        <span class="publico-tag" style="background:#ede9fe;color:#7c3aed">👁 Def. Visual</span>
+        <span class="publico-tag" style="background:#ede9fe;color:#7c3aed">📖 Dislexia</span>
+      </div>
+    </div>
+    <div class="ferramenta-arrow">→</div>
+  </a>
+
+  <!-- Ferramenta 3 -->
+  <a class="ferramenta-card f3" href="rotina-visual.html">
+    <div class="ferramenta-icon f3">📅</div>
+    <div class="ferramenta-info">
+      <div class="ferramenta-numero">Ferramenta 03</div>
+      <div class="status-badge status-ok">✅ Disponível</div>
+      <div class="ferramenta-nome">Rotina Visual</div>
+      <div class="ferramenta-desc">Organiza as atividades do dia com emojis, cores e temporizador visual.</div>
+      <div class="ferramenta-publico">
+        <span class="publico-tag" style="background:#dcfce7;color:#16a34a">🧩 TEA</span>
+        <span class="publico-tag" style="background:#dcfce7;color:#16a34a">⚡ TDAH</span>
+      </div>
+    </div>
+    <div class="ferramenta-arrow">→</div>
+  </a>
+
+  <!-- Ferramenta 4 -->
+  <a class="ferramenta-card f4" href="pictogramas.html">
+    <div class="ferramenta-icon f4">🃏</div>
+    <div class="ferramenta-info">
+      <div class="ferramenta-numero">Ferramenta 04</div>
+      <div class="status-badge status-dev">🔧 Em desenvolvimento</div>
+      <div class="ferramenta-nome">Prancha de Pictogramas</div>
+      <div class="ferramenta-desc">Comunicação alternativa por símbolos visuais para estudantes com dificuldades de comunicação oral.</div>
+      <div class="ferramenta-publico">
+        <span class="publico-tag" style="background:#fef3c7;color:#d97706">🧩 TEA não-verbal</span>
+        <span class="publico-tag" style="background:#fef3c7;color:#d97706">💬 CAA</span>
+      </div>
+    </div>
+    <div class="ferramenta-arrow">→</div>
+  </a>
+
+  <div class="section-title">Sobre o Projeto</div>
+  <div style="background:var(--white); border-radius:16px; padding:1.2rem; box-shadow:var(--shadow); font-size:0.85rem; line-height:1.7; color:var(--muted);">
+    Projeto de extensão universitária desenvolvido pela <strong style="color:var(--text)">UNICENTRO Campus Irati</strong> em parceria com a <strong style="color:var(--text)">Divisão de Inclusão e Acessibilidade</strong>. Todas as ferramentas são gratuitas, de código aberto e funcionam diretamente no navegador do celular — sem instalação, sem custo de licença.<br><br>
+    Financiado pelo <strong style="color:var(--text)">Programa Universidade Sem Fronteiras (USF)</strong> — SETI/Fundo Paraná.
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>Sem Barreiras</strong> · UNICENTRO Campus Irati<br>
+  Divisão de Inclusão e Acessibilidade · INETI<br>
+  Tecnologia assistiva gratuita e de código aberto
+</div>
+
+</body>
+</html>

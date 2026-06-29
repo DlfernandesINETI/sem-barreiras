@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Legendas ao Vivo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: #2a2a3a;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --text: #f0f0f8;
+    --muted: #888;
+    --green: #22c55e;
+    --red: #ef4444;
+    --caption-size: 2rem;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  #splash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 2rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .logo { font-size: 3rem; line-height: 1; }
+
+  .splash-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .splash-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .mode-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .mode-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem 1.6rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .mode-icon { font-size: 2rem; flex-shrink: 0; }
+  .mode-label { font-size: 1rem; font-weight: 700; }
+  .mode-desc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  /* SALA INPUT */
+  .sala-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .sala-label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+  .sala-input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-align: center;
+    outline: none;
+    width: 100%;
+  }
+
+  .sala-input:focus { border-color: var(--accent); }
+
+  .btn-entrar {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.9rem;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* PROFESSOR */
+  #professor {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1.5rem;
+    gap: 1.2rem;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .back-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .screen-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.8rem;
+    border-radius: 99px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.active {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .sala-badge {
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .sala-badge-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .sala-badge-code { font-size: 1.4rem; font-weight: 900; letter-spacing: 0.2em; color: var(--accent); }
+  .sala-badge-hint { font-size: 0.72rem; color: var(--muted); }
+
+  .preview-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .preview-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+  #previewText { font-size: 1rem; line-height: 1.7; color: var(--text); flex: 1; }
+  #interimText { color: var(--muted); font-style: italic; }
+
+  .controls { display: flex; gap: 0.8rem; }
+
+  .btn-main {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 14px;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn-main:active { transform: scale(0.97); }
+  .btn-start { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+  .btn-stop { background: var(--red); color: white; }
+
+  .btn-clear {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  /* ALUNO */
+  #aluno {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg);
+  }
+
+  .aluno-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .aluno-status { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); }
+
+  .font-controls { display: flex; gap: 0.4rem; }
+
+  .font-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .caption-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.2rem 1.2rem 2rem;
+    overflow: hidden;
+  }
+
+  #captionText {
+    font-size: var(--caption-size);
+    font-weight: 700;
+    line-height: 1.35;
+    color: #fff;
+    word-break: break-word;
+    text-align: center;
+  }
+
+  #captionInterim {
+    font-size: calc(var(--caption-size) * 0.75);
+    font-weight: 400;
+    color: #aaa;
+    text-align: center;
+    margin-top: 0.4rem;
+    font-style: italic;
+    min-height: 1em;
+  }
+
+  .no-signal { text-align: center; color: var(--muted); font-size: 0.9rem; }
+  .no-signal-icon { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+
+  .warning-box {
+    background: #2a1a0a;
+    border: 1px solid #b45309;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.78rem;
+    color: #fbbf24;
+    line-height: 1.5;
+  }
+
+  .error-box {
+    background: #2a0a0a;
+    border: 1px solid #ef4444;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.78rem;
+    color: #fca5a5;
+    line-height: 1.5;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo">🎧</div>
+  <div>
+    <div class="splash-title">Legendas ao Vivo</div>
+    <p class="splash-sub">Transcrição de fala em tempo real para alunos surdos ou com deficiência auditiva.</p>
+  </div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="showSalaInput('professor')">
+      <div class="mode-icon">🎤</div>
+      <div>
+        <div class="mode-label">Sou Professor(a)</div>
+        <div class="mode-desc">Falo — o texto aparece no celular dos alunos</div>
+      </div>
+    </div>
+    <div class="mode-card" onclick="showSalaInput('aluno')">
+      <div class="mode-icon">📱</div>
+      <div>
+        <div class="mode-label">Sou Aluno(a)</div>
+        <div class="mode-desc">Vejo o texto em tempo real na tela</div>
+      </div>
+    </div>
+  </div>
+  <div id="salaInput" style="display:none; width:100%; max-width:340px;">
+    <div class="sala-box">
+      <div class="sala-label" id="salaInputLabel">Código da sala</div>
+      <input class="sala-input" id="salaCode" maxlength="6" placeholder="EX: TURMA1" oninput="this.value=this.value.toUpperCase()">
+      <button class="btn-entrar" onclick="entrarSala()">Entrar →</button>
+    </div>
+  </div>
+  <div class="warning-box">
+    ⚠️ Use <strong>Google Chrome</strong>. Funciona entre dispositivos diferentes via internet — professor e aluno precisam do mesmo <strong>código de sala</strong>.
+  </div>
+</div>
+
+<!-- TELA PROFESSOR -->
+<div id="professor">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goBack()">← Voltar</button>
+    <div class="screen-title">Modo Professor</div>
+    <div class="status-pill" id="statusPill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusLabel">Parado</span>
+    </div>
+  </div>
+
+  <div class="sala-badge">
+    <div>
+      <div class="sala-badge-label">Código da Sala</div>
+      <div class="sala-badge-code" id="salaDisplay">—</div>
+    </div>
+    <div class="sala-badge-hint">Passe este código<br>para os alunos</div>
+  </div>
+
+  <div class="preview-box">
+    <div class="preview-label">Prévia do texto transcrito</div>
+    <div id="previewText"><span style="color:var(--muted);font-size:0.85rem;">Clique em "Iniciar" e comece a falar…</span></div>
+    <div id="interimText"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-main btn-start" id="btnToggle" onclick="toggleListening()">🎙️ Iniciar</button>
+    <button class="btn-clear" onclick="saveTxt()" title="Salvar como .txt">💾</button>
+    <button class="btn-clear" onclick="clearText()" title="Limpar texto">🗑️</button>
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+</div>
+
+<!-- TELA ALUNO -->
+<div id="aluno">
+  <div class="aluno-header">
+    <div class="aluno-status">
+      <div class="dot" id="alunoStatusDot"></div>
+      <span id="alunoStatusLabel">Conectando…</span>
+    </div>
+    <div class="font-controls">
+      <button class="font-btn" onclick="changeFontSize(-2)">A-</button>
+      <button class="font-btn" onclick="changeFontSize(2)">A+</button>
+      <button class="font-btn" onclick="goBack()">✕</button>
+    </div>
+  </div>
+
+  <div class="caption-area">
+    <div id="noSignal" class="no-signal">
+      <span class="no-signal-icon">👂</span>
+      Aguardando o professor iniciar…<br>
+      <span style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem;display:block;">Sala: <strong id="salaAlunoDisplay">—</strong></span>
+    </div>
+    <div id="captionText" style="display:none"></div>
+    <div id="captionInterim" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+// ============ FIREBASE CONFIG ============
+const firebaseConfig = {
+  apiKey: "AIzaSyDJMGcPp6iz4NnjSiDU7ihqQMkTX2rqr0A",
+  authDomain: "ambient-axiom-384901.firebaseapp.com",
+  databaseURL: "https://ambient-axiom-384901-default-rtdb.firebaseio.com",
+  projectId: "ambient-axiom-384901",
+  storageBucket: "ambient-axiom-384901.firebasestorage.app",
+  messagingSenderId: "914809989128",
+  appId: "1:914809989128:web:1415bf7a139fb9899649bd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ============ ESTADO GLOBAL ============
+let currentMode = null;
+let currentSala = null;
+let recognition = null;
+let isListening = false;
+let finalPhrases = []; // array de frases finalizadas
+let captionFontSize = 32;
+let lastResultIndex = 0;
+
+// ============ SPLASH / SALA ============
+window.showSalaInput = function(mode) {
+  currentMode = mode;
+  const box = document.getElementById('salaInput');
+  const label = document.getElementById('salaInputLabel');
+  box.style.display = 'block';
+  label.textContent = mode === 'professor'
+    ? 'Crie um código de sala (ex: TURMA1)'
+    : 'Digite o código de sala do professor';
+  document.getElementById('salaCode').focus();
+};
+
+window.entrarSala = function() {
+  const code = document.getElementById('salaCode').value.trim().toUpperCase();
+  if (code.length < 3) {
+    alert('Digite um código com pelo menos 3 caracteres.');
+    return;
+  }
+  currentSala = code;
+  if (currentMode === 'professor') {
+    goMode('professor');
+  } else {
+    goMode('aluno');
+  }
+};
+
+// Enter na input
+document.getElementById('salaCode').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.entrarSala();
+});
+
+// ============ NAVEGAÇÃO ============
+function goMode(mode) {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('professor').style.display = 'none';
+  document.getElementById('aluno').style.display = 'none';
+
+  if (mode === 'professor') {
+    document.getElementById('professor').style.display = 'flex';
+    document.getElementById('salaDisplay').textContent = currentSala;
+  } else if (mode === 'aluno') {
+    document.getElementById('aluno').style.display = 'flex';
+    document.getElementById('salaAlunoDisplay').textContent = currentSala;
+    startAlunoMode();
+  }
+}
+
+window.goBack = function() {
+  stopListening();
+  finalText = '';
+  currentSala = null;
+  currentMode = null;
+  document.getElementById('salaCode').value = '';
+  document.getElementById('salaInput').style.display = 'none';
+  document.getElementById('splash').style.display = 'flex';
+  document.getElementById('professor').style.display = 'none';
+  document.getElementById('aluno').style.display = 'none';
+};
+
+// ============ SPEECH RECOGNITION ============
+window.toggleListening = function() {
+  if (isListening) stopListening();
+  else startListening();
+};
+
+function startListening() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showError('Seu navegador não suporta reconhecimento de voz. Use o Google Chrome.');
+    return;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening = true;
+    lastResultIndex = 0;
+    updateProfessorStatus(true);
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    let newFinal = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (i < lastResultIndex) continue;
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        newFinal += t + ' ';
+        lastResultIndex = i + 1;
+      } else {
+        interim += t;
+      }
+    }
+    if (newFinal) {
+      // Cada frase finalizada vira um item do array
+      const frases = newFinal.trim().split(/(?<=[.!?])\s+|(?<=\s{2,})/);
+      frases.forEach(f => { if (f.trim()) finalPhrases.push(f.trim()); });
+      // Manter no máximo 50 frases para não sobrecarregar
+      if (finalPhrases.length > 50) finalPhrases = finalPhrases.slice(-50);
+    }
+    updatePreview(finalPhrases, interim);
+    sendToFirebase(finalPhrases, interim);
+  };
+
+  recognition.onerror = (event) => {
+    if (event.error === 'not-allowed') {
+      showError('Permissão de microfone negada. Permita o uso do microfone nas configurações do navegador.');
+    } else if (event.error !== 'no-speech') {
+      showError('Erro: ' + event.error);
+    }
+  };
+
+  recognition.onend = () => {
+    if (isListening) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  try { recognition.start(); } catch(e) { showError('Não foi possível iniciar o microfone: ' + e.message); }
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  updateProfessorStatus(false);
+}
+
+function updatePreview(phrases, interim) {
+  const p = document.getElementById('previewText');
+  if (phrases && phrases.length > 0) {
+    p.innerHTML = phrases.map(f => `<p style="margin-bottom:0.6em">${f}</p>`).join('');
+  }
+  document.getElementById('interimText').textContent = interim;
+  const box = p.parentElement;
+  box.scrollTop = box.scrollHeight;
+}
+
+function updateProfessorStatus(active) {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusLabel');
+  const btn = document.getElementById('btnToggle');
+  if (active) {
+    dot.classList.add('active');
+    label.textContent = 'Transmitindo';
+    btn.textContent = '⏹ Pausar';
+    btn.className = 'btn-main btn-stop';
+  } else {
+    dot.classList.remove('active');
+    label.textContent = 'Parado';
+    btn.textContent = '🎙️ Iniciar';
+    btn.className = 'btn-main btn-start';
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.style.display = 'block';
+  box.textContent = '⚠️ ' + msg;
+}
+
+window.clearText = function() {
+  finalText = '';
+  document.getElementById('previewText').innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">Clique em "Iniciar" e comece a falar…</span>';
+  document.getElementById('interimText').textContent = '';
+  sendToFirebase('', '');
+};
+
+window.saveTxt = function() {
+  if (!finalPhrases.length) { alert('Nenhum texto transcrito para salvar.'); return; }
+  const now = new Date();
+  const stamp = now.toLocaleString('pt-BR').replace(/[/:]/g, '-').replace(', ', '_');
+  const conteudo = `LEGENDAS AO VIVO — UNICENTRO\nData: ${now.toLocaleString('pt-BR')}\nSala: ${currentSala}\n\n${finalPhrases.join('\n\n')}`;
+  const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `transcricao_${stamp}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ============ FIREBASE — ENVIAR ============
+function sendToFirebase(phrases, interim) {
+  if (!currentSala) return;
+  const salaRef = ref(db, `salas/${currentSala}`);
+  set(salaRef, { phrases: phrases || [], interim: interim || '', ts: Date.now() }).catch(err => {
+    showError('Erro ao enviar para o Firebase: ' + err.message);
+  });
+}
+
+// ============ MODO ALUNO — RECEBER ============
+function startAlunoMode() {
+  const alunoStatusDot = document.getElementById('alunoStatusDot');
+  const alunoStatusLabel = document.getElementById('alunoStatusLabel');
+
+  const salaRef = ref(db, `salas/${currentSala}`);
+  onValue(salaRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      document.getElementById('noSignal').style.display = 'block';
+      document.getElementById('captionText').style.display = 'none';
+      document.getElementById('captionInterim').style.display = 'none';
+      alunoStatusDot.classList.remove('active');
+      alunoStatusLabel.textContent = 'Aguardando professor…';
+      return;
+    }
+
+    const { phrases, interim } = data;
+
+    if ((!phrases || !phrases.length) && !interim) {
+      document.getElementById('noSignal').style.display = 'block';
+      document.getElementById('captionText').style.display = 'none';
+      document.getElementById('captionInterim').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('noSignal').style.display = 'none';
+    document.getElementById('captionText').style.display = 'block';
+    document.getElementById('captionInterim').style.display = 'block';
+
+    const ct = document.getElementById('captionText');
+    const ci = document.getElementById('captionInterim');
+
+    // Mostrar apenas as últimas 3 frases na tela do aluno
+    const recentPhrases = (phrases || []).slice(-3);
+    ct.innerHTML = recentPhrases.map((f, i) => {
+      const opacity = i === recentPhrases.length - 1 ? '1' : '0.45';
+      const size = i === recentPhrases.length - 1 ? captionFontSize : captionFontSize * 0.75;
+      return `<p style="opacity:${opacity};font-size:${size}px;margin-bottom:0.5em">${f}</p>`;
+    }).join('');
+
+    ci.textContent = interim || '';
+    ci.style.fontSize = (captionFontSize * 0.65) + 'px';
+
+    alunoStatusDot.classList.add('active');
+    alunoStatusLabel.textContent = `Ao vivo ✓ — Sala: ${currentSala}`;
+  });
+}
+
+window.changeFontSize = function(delta) {
+  captionFontSize = Math.min(64, Math.max(16, captionFontSize + delta));
+  document.getElementById('captionText').style.fontSize = captionFontSize + 'px';
+  document.getElementById('captionInterim').style.fontSize = (captionFontSize * 0.75) + 'px';
+};
+</script>
+</body>
+</html>

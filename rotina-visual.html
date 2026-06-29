@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Rotina Visual</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4ff;
+  --white: #ffffff;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+
+  /* Cores por tipo de atividade */
+  --c-aula:    #4f8ef7;
+  --c-pausa:   #22c55e;
+  --c-lanche:  #f59e0b;
+  --c-leitura: #a78bfa;
+  --c-tarefa:  #f43f5e;
+  --c-arte:    #ec4899;
+  --c-edu:     #06b6d4;
+  --c-livre:   #84cc16;
+}
+
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ======= SPLASH ======= */
+#splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.splash-logo { font-size: 4rem; }
+
+.splash-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.splash-title span {
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.splash-sub { font-size: 0.95rem; color: var(--muted); max-width: 300px; line-height: 1.6; }
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.mode-btn {
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 1.4rem 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.mode-btn:hover { border-color: #4f8ef7; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,142,247,0.2); }
+.mode-btn .icon { font-size: 2.2rem; }
+.mode-btn .label { font-size: 0.85rem; font-weight: 800; }
+.mode-btn .desc { font-size: 0.72rem; color: var(--muted); text-align: center; }
+
+/* ======= LAYOUT GERAL ======= */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+
+.topbar-title { font-size: 1rem; font-weight: 800; }
+.topbar-sub { font-size: 0.72rem; color: var(--muted); }
+
+.back-btn {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.content { padding: 1.2rem; flex: 1; }
+
+/* ======= MODO PROFESSOR ======= */
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.section-title:first-child { margin-top: 0; }
+
+/* Form de nova atividade */
+.add-form {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.form-row { display: flex; gap: 0.6rem; }
+
+.form-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: #4f8ef7; }
+
+.form-select {
+  flex: 1;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+
+.duration-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.duration-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; }
+
+.btn-add {
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 0.9rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-add:active { transform: scale(0.97); }
+
+/* Lista de atividades */
+.atividade-lista { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.atividade-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  box-shadow: var(--shadow);
+  border-left: 5px solid var(--c-aula);
+  position: relative;
+}
+
+.atividade-emoji { font-size: 1.8rem; flex-shrink: 0; }
+
+.atividade-info { flex: 1; }
+.atividade-nome { font-size: 0.95rem; font-weight: 800; }
+.atividade-duracao { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+
+.atividade-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+.btn-icon {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+
+/* Botão compartilhar */
+.btn-share {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Código de sala */
+.sala-box {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 1.2rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 2px dashed #4f8ef7;
+}
+
+.sala-code {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: #4f8ef7;
+}
+
+.sala-hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
+
+/* ======= MODO ALUNO ======= */
+.rotina-header {
+  text-align: center;
+  padding: 1rem;
+}
+
+.rotina-data { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+.rotina-titulo { font-size: 1.3rem; font-weight: 900; margin-top: 0.2rem; }
+
+.progresso-geral {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.progresso-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.progresso-bar {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progresso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f8ef7, #a78bfa);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+/* Card de atividade do aluno */
+.aluno-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--c-aula);
+  transition: opacity 0.3s;
+}
+
+.aluno-card.concluida {
+  opacity: 0.5;
+  border-left-color: #d1d5db;
+}
+
+.aluno-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.aluno-emoji { font-size: 2.2rem; }
+
+.aluno-info { flex: 1; }
+.aluno-nome { font-size: 1.1rem; font-weight: 900; }
+.aluno-tempo-restante { font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+
+.check-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border);
+  background: var(--bg);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.check-btn.done {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: white;
+}
+
+/* Timer bar individual */
+.timer-bar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.timer-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 1s linear;
+}
+
+.timer-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* Botão iniciar timer */
+.btn-timer {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  margin-top: 0.5rem;
+}
+
+.btn-timer.ativo {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* Entrada de código (aluno) */
+.entrada-codigo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-width: 300px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.codigo-input {
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  outline: none;
+  color: var(--text);
+}
+
+.codigo-input:focus { border-color: #4f8ef7; }
+
+.btn-entrar {
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+}
+
+.empty-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.empty-text { font-size: 0.9rem; }
+
+/* Alerta de conclusão */
+.confetti-msg {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-radius: 16px;
+  padding: 1.2rem;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="splash-logo">📅</div>
+  <div>
+    <div class="splash-title">Rotina <span>Visual</span></div>
+    <p class="splash-sub">Organize as atividades do dia de forma visual e acessível para estudantes com TEA e TDAH.</p>
+  </div>
+  <div class="mode-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="mode-btn" onclick="goMode('professor')">
+      <div class="icon">🎓</div>
+      <div class="label">Professor</div>
+      <div class="desc">Montar a rotina do dia</div>
+    </div>
+    <div class="mode-btn" onclick="goMode('aluno-entrada')">
+      <div class="icon">🎒</div>
+      <div class="label">Aluno</div>
+      <div class="desc">Ver rotina do professor</div>
+    </div>
+  </div>
+  <div class="mode-grid" style="grid-template-columns: 1fr; max-width:360px; width:100%;">
+    <div class="mode-btn" onclick="goMode('aluno-proprio')" style="flex-direction:row; justify-content:flex-start; gap:1rem; padding:1rem 1.4rem;">
+      <div class="icon">✏️</div>
+      <div>
+        <div class="label">Minha Rotina Própria</div>
+        <div class="desc">Monte ou complemente sua própria rotina</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TELA PROFESSOR -->
+<div id="professor" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <div>
+      <div class="topbar-title">📅 Montar Rotina</div>
+      <div class="topbar-sub">Adicione as atividades do dia</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+
+    <div class="section-title">Nova atividade</div>
+    <div class="add-form">
+      <input class="form-input" id="nomeAtividade" placeholder="Nome da atividade (ex: Matemática)">
+      <div class="form-row">
+        <select class="form-select" id="tipoAtividade" onchange="atualizarEmoji()">
+          <option value="aula" data-emoji="📚" data-cor="var(--c-aula)">📚 Aula</option>
+          <option value="pausa" data-emoji="☕" data-cor="var(--c-pausa)">☕ Pausa</option>
+          <option value="lanche" data-emoji="🍎" data-cor="var(--c-lanche)">🍎 Lanche</option>
+          <option value="leitura" data-emoji="📖" data-cor="var(--c-leitura)">📖 Leitura</option>
+          <option value="tarefa" data-emoji="✏️" data-cor="var(--c-tarefa)">✏️ Tarefa</option>
+          <option value="arte" data-emoji="🎨" data-cor="var(--c-arte)">🎨 Arte</option>
+          <option value="edu" data-emoji="🏃" data-cor="var(--c-edu)">🏃 Ed. Física</option>
+          <option value="livre" data-emoji="🎮" data-cor="var(--c-livre)">🎮 Tempo livre</option>
+        </select>
+        <input class="form-input" id="emojiCustom" placeholder="Emoji (opcional)" style="max-width:110px; text-align:center; font-size:1.2rem;">
+      </div>
+      <div class="duration-row">
+        <div>
+          <div class="duration-label">Duração (minutos)</div>
+          <input class="form-input" id="duracaoMin" type="number" min="1" max="180" value="50" placeholder="50">
+        </div>
+        <div>
+          <div class="duration-label">Horário de início</div>
+          <input class="form-input" id="horarioInicio" type="time" value="08:00">
+        </div>
+      </div>
+      <button class="btn-add" onclick="adicionarAtividade()">+ Adicionar atividade</button>
+    </div>
+
+    <div class="section-title" id="listaLabel" style="display:none">Rotina de hoje</div>
+    <div class="atividade-lista" id="listaProf"></div>
+
+    <div id="shareSection" style="display:none">
+      <div class="sala-box">
+        <div class="sala-hint">Código da sala para os alunos</div>
+        <div class="sala-code" id="codigoSala">—</div>
+        <div class="sala-hint">Compartilhe este código com seus alunos</div>
+      </div>
+      <button class="btn-share" onclick="compartilharRotina()">📤 Compartilhar rotina com alunos</button>
+    </div>
+  </div>
+</div>
+
+<!-- TELA ALUNO — ENTRADA DE CÓDIGO -->
+<div id="aluno-entrada" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <div>
+      <div class="topbar-title">🎒 Minha Rotina</div>
+      <div class="topbar-sub">Digite o código do professor</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content" style="display:flex; flex-direction:column; justify-content:center; min-height:60vh;">
+    <div class="entrada-codigo">
+      <div style="font-size:3rem">📅</div>
+      <div style="font-weight:800; font-size:1.1rem;">Qual é o código da sala?</div>
+      <input class="codigo-input" id="codigoInput" maxlength="8" placeholder="ROTINA1" oninput="this.value=this.value.toUpperCase()">
+      <button class="btn-entrar" onclick="entrarRotina()">Ver minha rotina →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TELA ALUNO — ROTINA -->
+<div id="aluno-rotina" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMode('aluno-entrada')">← Voltar</button>
+    <div>
+      <div class="topbar-title" id="alunoTitulo">📅 Minha Rotina</div>
+      <div class="topbar-sub" id="alunoSub">Hoje</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+    <div id="confettiMsg" class="confetti-msg">🎉 Você concluiu todas as atividades de hoje!</div>
+
+    <div class="progresso-geral">
+      <div class="progresso-label">
+        <span>Progresso do dia</span>
+        <span id="progressoPct">0%</span>
+      </div>
+      <div class="progresso-bar">
+        <div class="progresso-fill" id="progressoFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="listaAluno"></div>
+  </div>
+</div>
+
+<!-- TELA ALUNO PRÓPRIO -->
+<div id="aluno-proprio" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <div>
+      <div class="topbar-title">✏️ Minha Rotina</div>
+      <div class="topbar-sub">Monte ou complemente sua rotina</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+
+    <!-- Opção: carregar rotina do professor -->
+    <div class="section-title">Carregar rotina do professor (opcional)</div>
+    <div class="add-form" style="flex-direction:row; align-items:center; gap:0.8rem;">
+      <input class="form-input" id="codigoProf" maxlength="8" placeholder="Código do prof." style="text-transform:uppercase; letter-spacing:0.1em; flex:1;">
+      <button class="btn-add" style="flex:0; padding:0.9rem 1.2rem; white-space:nowrap;" onclick="carregarDoProf()">Carregar</button>
+    </div>
+
+    <div class="section-title">Adicionar atividade</div>
+    <div class="add-form">
+      <input class="form-input" id="nomeAtivPropio" placeholder="Nome da atividade (ex: Cálculo II)">
+      <div class="form-row">
+        <select class="form-select" id="tipoAtivProprio" onchange="atualizarEmojiProprio()">
+          <option value="aula" data-emoji="📚" data-cor="var(--c-aula)">📚 Aula</option>
+          <option value="pausa" data-emoji="☕" data-cor="var(--c-pausa)">☕ Pausa</option>
+          <option value="lanche" data-emoji="🍎" data-cor="var(--c-lanche)">🍎 Lanche</option>
+          <option value="leitura" data-emoji="📖" data-cor="var(--c-leitura)">📖 Leitura</option>
+          <option value="tarefa" data-emoji="✏️" data-cor="var(--c-tarefa)">✏️ Tarefa</option>
+          <option value="arte" data-emoji="🎨" data-cor="var(--c-arte)">🎨 Arte</option>
+          <option value="edu" data-emoji="🏃" data-cor="var(--c-edu)">🏃 Ed. Física</option>
+          <option value="livre" data-emoji="🎮" data-cor="var(--c-livre)">🎮 Tempo livre</option>
+        </select>
+        <input class="form-input" id="emojiCustomProprio" placeholder="Emoji" style="max-width:90px; text-align:center; font-size:1.2rem;">
+      </div>
+      <div class="duration-row">
+        <div>
+          <div class="duration-label">Duração (minutos)</div>
+          <input class="form-input" id="duracaoMinProprio" type="number" min="1" max="180" value="50">
+        </div>
+        <div>
+          <div class="duration-label">Horário de início</div>
+          <input class="form-input" id="horarioInicioProprio" type="time" value="08:00">
+        </div>
+      </div>
+      <button class="btn-add" onclick="adicionarAtivProprio()">+ Adicionar</button>
+    </div>
+
+    <div class="section-title" id="listaLabelProprio" style="display:none">Minha rotina de hoje</div>
+    <div class="atividade-lista" id="listaProprio"></div>
+
+    <div id="btnIniciarProprio" style="display:none; margin-top:1rem;">
+      <button class="btn-share" onclick="iniciarRotinaPropria()">▶ Iniciar minha rotina</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ ESTADO ============
+let atividades = [];
+let salaAtual = null;
+let timers = {};
+let atividadesProprias = [];
+
+// Carregar atividades próprias salvas
+try {
+  const salvas = localStorage.getItem('rotina_propria');
+  if (salvas) atividadesProprias = JSON.parse(salvas);
+} catch(e) {}
+
+// ============ NAVEGAÇÃO ============
+function goMode(mode) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(mode).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ============ PROFESSOR ============
+function atualizarEmoji() {
+  const sel = document.getElementById('tipoAtividade');
+  const opt = sel.options[sel.selectedIndex];
+  // Não sobrescreve se usuário já digitou algo
+  const custom = document.getElementById('emojiCustom');
+  if (!custom.value) custom.placeholder = opt.dataset.emoji;
+}
+
+function adicionarAtividade() {
+  const nome = document.getElementById('nomeAtividade').value.trim();
+  if (!nome) { alert('Digite o nome da atividade!'); return; }
+
+  const sel = document.getElementById('tipoAtividade');
+  const opt = sel.options[sel.selectedIndex];
+  const emojiCustom = document.getElementById('emojiCustom').value.trim();
+  const emoji = emojiCustom || opt.dataset.emoji;
+  const cor = opt.dataset.cor;
+  const duracao = parseInt(document.getElementById('duracaoMin').value) || 50;
+  const horario = document.getElementById('horarioInicio').value;
+
+  atividades.push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value });
+
+  // Limpar campos
+  document.getElementById('nomeAtividade').value = '';
+  document.getElementById('emojiCustom').value = '';
+
+  renderListaProf();
+}
+
+function removerAtividade(id) {
+  atividades = atividades.filter(a => a.id !== id);
+  renderListaProf();
+}
+
+function moverAtividade(id, dir) {
+  const idx = atividades.findIndex(a => a.id === id);
+  const novo = idx + dir;
+  if (novo < 0 || novo >= atividades.length) return;
+  [atividades[idx], atividades[novo]] = [atividades[novo], atividades[idx]];
+  renderListaProf();
+}
+
+function renderListaProf() {
+  const lista = document.getElementById('listaProf');
+  const label = document.getElementById('listaLabel');
+  const share = document.getElementById('shareSection');
+
+  if (!atividades.length) {
+    lista.innerHTML = '';
+    label.style.display = 'none';
+    share.style.display = 'none';
+    return;
+  }
+
+  label.style.display = 'block';
+  share.style.display = 'block';
+
+  // Gerar código de sala se ainda não existe
+  if (!salaAtual) {
+    salaAtual = 'ROT' + Math.random().toString(36).substring(2,6).toUpperCase();
+    document.getElementById('codigoSala').textContent = salaAtual;
+  }
+
+  lista.innerHTML = atividades.map((a, i) => `
+    <div class="atividade-card" style="border-left-color: ${a.cor}">
+      <div class="atividade-emoji">${a.emoji}</div>
+      <div class="atividade-info">
+        <div class="atividade-nome">${a.nome}</div>
+        <div class="atividade-duracao">⏱ ${a.duracao} min · ${a.horario ? '🕐 ' + a.horario : ''}</div>
+      </div>
+      <div class="atividade-actions">
+        ${i > 0 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, -1)">↑</button>` : ''}
+        ${i < atividades.length-1 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, 1)">↓</button>` : ''}
+        <button class="btn-icon" onclick="removerAtividade(${a.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function compartilharRotina() {
+  if (!atividades.length) { alert('Adicione pelo menos uma atividade!'); return; }
+  // Salvar no localStorage com código da sala
+  localStorage.setItem('rotina_' + salaAtual, JSON.stringify(atividades));
+  alert(`Rotina salva! Código para os alunos: ${salaAtual}\n\nOs alunos devem abrir este app e digitar o código: ${salaAtual}`);
+}
+
+// ============ ALUNO ============
+function entrarRotina() {
+  const codigo = document.getElementById('codigoInput').value.trim().toUpperCase();
+  if (codigo.length < 3) { alert('Digite um código válido!'); return; }
+
+  const data = localStorage.getItem('rotina_' + codigo);
+  if (!data) {
+    alert('Código não encontrado! Verifique com seu professor.');
+    return;
+  }
+
+  const rotinaAluno = JSON.parse(data).map(a => ({ ...a, concluida: false, timerAtivo: false, tempoRestante: a.duracao * 60 }));
+  renderRotinAluno(rotinaAluno, codigo);
+  goMode('aluno-rotina');
+}
+
+function renderRotinAluno(rotina, codigo) {
+  // Parar timers existentes
+  Object.values(timers).forEach(t => clearInterval(t));
+  timers = {};
+
+  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('alunoSub').textContent = hoje;
+  document.getElementById('alunoTitulo').textContent = `📅 Sala: ${codigo}`;
+
+  atualizarProgressoGeral(rotina);
+
+  const lista = document.getElementById('listaAluno');
+
+  if (!rotina.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade encontrada</div></div>`;
+    return;
+  }
+
+  function renderCards() {
+    atualizarProgressoGeral(rotina);
+    const todasConcluidas = rotina.every(a => a.concluida);
+    document.getElementById('confettiMsg').style.display = todasConcluidas ? 'block' : 'none';
+
+    lista.innerHTML = rotina.map((a, i) => {
+      const pct = Math.round((1 - a.tempoRestante / (a.duracao * 60)) * 100);
+      const min = Math.floor(a.tempoRestante / 60);
+      const seg = a.tempoRestante % 60;
+      const tempoStr = `${min}:${seg.toString().padStart(2,'0')}`;
+
+      return `
+        <div class="aluno-card ${a.concluida ? 'concluida' : ''}" style="border-left-color: ${a.concluida ? '#d1d5db' : a.cor}">
+          <div class="aluno-card-top">
+            <div class="aluno-emoji">${a.emoji}</div>
+            <div class="aluno-info">
+              <div class="aluno-nome">${a.nome}</div>
+              <div class="aluno-tempo-restante">${a.concluida ? '✅ Concluída' : (a.timerAtivo ? '⏳ ' + tempoStr + ' restantes' : '⏱ ' + a.duracao + ' min · ' + (a.horario || ''))}</div>
+            </div>
+            <button class="check-btn ${a.concluida ? 'done' : ''}" onclick="toggleConcluida(${i})">
+              ${a.concluida ? '✓' : '○'}
+            </button>
+          </div>
+          ${!a.concluida ? `
+            <div class="timer-bar">
+              <div class="timer-fill" style="width:${pct}%; background: ${a.cor};"></div>
+            </div>
+            <div class="timer-label">
+              <span>${pct}% concluído</span>
+              <span>${tempoStr}</span>
+            </div>
+            <button class="btn-timer ${a.timerAtivo ? 'ativo' : ''}" onclick="toggleTimer(${i})">
+              ${a.timerAtivo ? '⏸ Pausar temporizador' : '▶ Iniciar temporizador'}
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleConcluida(idx) {
+    // Parar timer se estiver ativo
+    if (timers[idx]) { clearInterval(timers[idx]); delete timers[idx]; }
+    rotina[idx].concluida = !rotina[idx].concluida;
+    rotina[idx].timerAtivo = false;
+    renderCards();
+  }
+
+  function toggleTimer(idx) {
+    if (rotina[idx].timerAtivo) {
+      // Pausar
+      clearInterval(timers[idx]);
+      delete timers[idx];
+      rotina[idx].timerAtivo = false;
+    } else {
+      // Iniciar
+      rotina[idx].timerAtivo = true;
+      timers[idx] = setInterval(() => {
+        if (rotina[idx].tempoRestante <= 0) {
+          clearInterval(timers[idx]);
+          delete timers[idx];
+          rotina[idx].timerAtivo = false;
+          rotina[idx].tempoRestante = 0;
+          // Vibrar se disponível
+          if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        } else {
+          rotina[idx].tempoRestante--;
+        }
+        renderCards();
+      }, 1000);
+    }
+    renderCards();
+  }
+
+  // Expor funções globalmente
+  window.toggleConcluida = toggleConcluida;
+  window.toggleTimer = toggleTimer;
+
+  renderCards();
+}
+
+function atualizarProgressoGeral(rotina) {
+  const total = rotina.length;
+  const concluidas = rotina.filter(a => a.concluida).length;
+  const pct = total ? Math.round((concluidas / total) * 100) : 0;
+  document.getElementById('progressoPct').textContent = pct + '%';
+  document.getElementById('progressoFill').style.width = pct + '%';
+}
+
+// ============ MODO PRÓPRIO DO ALUNO ============
+function atualizarEmojiProprio() {
+  const sel = document.getElementById('tipoAtivProprio');
+  const opt = sel.options[sel.selectedIndex];
+  const custom = document.getElementById('emojiCustomProprio');
+  if (!custom.value) custom.placeholder = opt.dataset.emoji;
+}
+
+function carregarDoProf() {
+  const codigo = document.getElementById('codigoProf').value.trim().toUpperCase();
+  if (codigo.length < 3) { alert('Digite um código válido!'); return; }
+  const data = localStorage.getItem('rotina_' + codigo);
+  if (!data) { alert('Código não encontrado! Verifique com seu professor.'); return; }
+  const rotinaProf = JSON.parse(data);
+  // Adicionar marcador de origem
+  const novas = rotinaProf.map(a => ({ ...a, origem: 'professor', id: Date.now() + Math.random() }));
+  // Evitar duplicatas simples por nome
+  const nomesExistentes = atividadesProprias.map(a => a.nome.toLowerCase());
+  const paraAdicionar = novas.filter(a => !nomesExistentes.includes(a.nome.toLowerCase()));
+  atividadesProprias = [...atividadesProprias, ...paraAdicionar];
+  salvarProprias();
+  renderListaProprio();
+  alert(`✅ ${paraAdicionar.length} atividade(s) carregada(s) do professor!`);
+}
+
+function adicionarAtivProprio() {
+  const nome = document.getElementById('nomeAtivPropio').value.trim();
+  if (!nome) { alert('Digite o nome da atividade!'); return; }
+  const sel = document.getElementById('tipoAtivProprio');
+  const opt = sel.options[sel.selectedIndex];
+  const emojiCustom = document.getElementById('emojiCustomProprio').value.trim();
+  const emoji = emojiCustom || opt.dataset.emoji;
+  const cor = opt.dataset.cor;
+  const duracao = parseInt(document.getElementById('duracaoMinProprio').value) || 50;
+  const horario = document.getElementById('horarioInicioProprio').value;
+  atividadesProprias.push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value, origem: 'aluno' });
+  document.getElementById('nomeAtivPropio').value = '';
+  document.getElementById('emojiCustomProprio').value = '';
+  salvarProprias();
+  renderListaProprio();
+}
+
+function removerAtivProprio(id) {
+  atividadesProprias = atividadesProprias.filter(a => a.id !== id);
+  salvarProprias();
+  renderListaProprio();
+}
+
+function moverAtivProprio(id, dir) {
+  const idx = atividadesProprias.findIndex(a => a.id === id);
+  const novo = idx + dir;
+  if (novo < 0 || novo >= atividadesProprias.length) return;
+  [atividadesProprias[idx], atividadesProprias[novo]] = [atividadesProprias[novo], atividadesProprias[idx]];
+  salvarProprias();
+  renderListaProprio();
+}
+
+function salvarProprias() {
+  localStorage.setItem('rotina_propria', JSON.stringify(atividadesProprias));
+}
+
+function renderListaProprio() {
+  const lista = document.getElementById('listaProprio');
+  const label = document.getElementById('listaLabelProprio');
+  const btnIniciar = document.getElementById('btnIniciarProprio');
+
+  if (!atividadesProprias.length) {
+    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade ainda.<br>Adicione acima ou carregue do professor.</div></div>';
+    label.style.display = 'none';
+    btnIniciar.style.display = 'none';
+    return;
+  }
+
+  label.style.display = 'block';
+  btnIniciar.style.display = 'block';
+
+  lista.innerHTML = atividadesProprias.map((a, i) => `
+    <div class="atividade-card" style="border-left-color: ${a.cor}">
+      <div class="atividade-emoji">${a.emoji}</div>
+      <div class="atividade-info">
+        <div class="atividade-nome">${a.nome} ${a.origem === 'professor' ? '<span style="font-size:0.65rem;background:#e0e7ff;color:#4f8ef7;padding:2px 6px;border-radius:99px;font-weight:700">Prof.</span>' : ''}</div>
+        <div class="atividade-duracao">⏱ ${a.duracao} min · ${a.horario ? '🕐 ' + a.horario : ''}</div>
+      </div>
+      <div class="atividade-actions">
+        ${i > 0 ? `<button class="btn-icon" onclick="moverAtivProprio(${a.id}, -1)">↑</button>` : ''}
+        ${i < atividadesProprias.length-1 ? `<button class="btn-icon" onclick="moverAtivProprio(${a.id}, 1)">↓</button>` : ''}
+        <button class="btn-icon" onclick="removerAtivProprio(${a.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function iniciarRotinaPropria() {
+  if (!atividadesProprias.length) { alert('Adicione pelo menos uma atividade!'); return; }
+  renderRotinAluno(atividadesProprias.map(a => ({ ...a, concluida: false, timerAtivo: false, tempoRestante: a.duracao * 60 })), 'Minha Rotina');
+  goMode('aluno-rotina');
+  document.getElementById('alunoTitulo').textContent = '📅 Minha Rotina';
+}
+
+// Init
+atualizarEmoji();
+atualizarEmojiProprio();
+renderListaProprio();
+</script>
+</body>
+</html>
