@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Podcast Acadêmico</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface2: #16213e;
+  --border: #2a2a4a;
+  --accent: #a78bfa;
+  --accent2: #4f8ef7;
+  --text: #f0f0f8;
+  --muted: #888;
+  --green: #22c55e;
+  --red: #ef4444;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ======= TELAS ======= */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ======= TOPBAR ======= */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar-title { font-size: 1rem; font-weight: 800; }
+.topbar-sub { font-size: 0.72rem; color: var(--muted); }
+
+.back-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.content { padding: 1.2rem; flex: 1; }
+
+/* ======= HOME ======= */
+.home-header {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-header::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(167,139,250,0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(79,142,247,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.home-logo { font-size: 3.5rem; margin-bottom: 0.8rem; }
+
+.home-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.4rem;
+}
+
+.home-sub { font-size: 0.85rem; color: var(--muted); line-height: 1.6; max-width: 300px; margin: 0 auto; }
+
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 1.1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-secondary {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 1.1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+/* Biblioteca na home */
+.section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+.biblioteca-lista { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.podcast-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.podcast-card:hover { border-color: var(--accent); }
+
+.podcast-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.podcast-info { flex: 1; min-width: 0; }
+.podcast-titulo { font-size: 0.9rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podcast-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+.podcast-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+.btn-icon {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--muted);
+}
+
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.empty-text { font-size: 0.85rem; line-height: 1.6; }
+
+/* ======= TELA UPLOAD ======= */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 20px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--surface);
+  margin-bottom: 1rem;
+}
+
+.upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(167,139,250,0.05); }
+.upload-icon { font-size: 3rem; margin-bottom: 0.8rem; }
+.upload-title { font-size: 1rem; font-weight: 800; margin-bottom: 0.3rem; }
+.upload-sub { font-size: 0.78rem; color: var(--muted); }
+.upload-input { display: none; }
+
+.arquivo-selecionado {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  display: none;
+}
+
+.arquivo-icon { font-size: 1.6rem; flex-shrink: 0; }
+.arquivo-nome { font-size: 0.85rem; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arquivo-remover { font-size: 0.8rem; color: var(--red); cursor: pointer; background: none; border: none; font-family: inherit; font-weight: 700; }
+
+.titulo-input {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.titulo-input:focus { border-color: var(--accent); }
+
+/* ======= TELA GERANDO ======= */
+.gerando-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 64px; height: 64px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.gerando-titulo { font-size: 1.2rem; font-weight: 900; }
+.gerando-sub { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+.progresso-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.step.ativo { color: var(--accent); }
+.step.feito { color: var(--green); }
+.step-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+/* ======= PLAYER ======= */
+.player-container {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.player-titulo { font-size: 1.1rem; font-weight: 900; margin-bottom: 0.3rem; }
+.player-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 1.2rem; }
+
+.player-progress {
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.player-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width 0.5s linear;
+  width: 0%;
+}
+
+.player-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.btn-play {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  transition: transform 0.1s;
+}
+
+.btn-play:active { transform: scale(0.93); }
+
+.btn-control {
+  width: 44px; height: 44px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+}
+
+.velocidade-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.vel-label { font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+.vel-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+
+.vel-btn.ativo { background: var(--accent); border-color: var(--accent); color: white; }
+
+.gravacao-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+}
+
+.rec-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.rec-texto { font-size: 0.78rem; font-weight: 700; color: var(--muted); flex: 1; }
+
+/* Roteiro */
+.roteiro-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.roteiro-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 0.6rem; }
+.roteiro-texto { font-size: 0.82rem; line-height: 1.7; color: var(--text); }
+
+.highlight-word { background: rgba(167,139,250,0.3); border-radius: 3px; }
+
+/* Botões de ação */
+.acoes-row { display: flex; gap: 0.7rem; }
+
+.btn-acao {
+  flex: 1;
+  padding: 0.9rem;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: none;
+}
+
+.btn-salvar { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+.btn-download { background: var(--green); color: white; }
+.btn-novo { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: transform 0.3s;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ======= HOME ======= -->
+<div id="home" class="screen active">
+  <div class="home-header">
+    <div class="home-logo">🎙️</div>
+    <div class="home-title">Podcast Acadêmico</div>
+    <p class="home-sub">Transforme qualquer texto em um podcast de análise acadêmica.</p>
+  </div>
+  <div class="home-actions">
+    <button class="btn-primary" onclick="goScreen('upload')">
+      📄 Criar novo podcast
+    </button>
+    <button class="btn-secondary" onclick="goScreen('biblioteca')">
+      🎧 Minha biblioteca
+    </button>
+  </div>
+  <div style="padding: 0 1.2rem 1.5rem;">
+    <div class="section-title">Recentes</div>
+    <div id="recentesLista"></div>
+  </div>
+</div>
+
+<!-- ======= UPLOAD ======= -->
+<div id="upload" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
+    <div>
+      <div class="topbar-title">📄 Novo Podcast</div>
+      <div class="topbar-sub">Faça upload do material</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault(); this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div class="upload-title">Selecione ou arraste o arquivo</div>
+      <div class="upload-sub">PDF · DOCX · TXT · até 10MB</div>
+      <input type="file" id="fileInput" class="upload-input" accept=".pdf,.docx,.txt" onchange="handleFile(event)">
+    </div>
+
+    <div class="arquivo-selecionado" id="arquivoSelecionado">
+      <div class="arquivo-icon" id="arquivoIcone">📄</div>
+      <div class="arquivo-nome" id="arquivoNome">arquivo.pdf</div>
+      <button class="arquivo-remover" onclick="removerArquivo()">✕ Remover</button>
+    </div>
+
+    <input class="titulo-input" id="tituloInput" placeholder="Título do podcast (ex: Resumo de Turismo Sustentável)">
+
+    <button class="btn-primary" id="btnGerar" onclick="gerarPodcast()" style="opacity:0.5; pointer-events:none;">
+      🎙️ Gerar Podcast com IA
+    </button>
+
+  </div>
+</div>
+
+<!-- ======= GERANDO ======= -->
+<div id="gerando" class="screen">
+  <div class="gerando-container">
+    <div class="spinner"></div>
+    <div>
+      <div class="gerando-titulo">Gerando seu podcast…</div>
+      <div class="gerando-sub">A IA está transformando seu texto em um roteiro de podcast acadêmico.</div>
+    </div>
+    <div class="progresso-steps">
+      <div class="step ativo" id="step1"><div class="step-icon">📄</div> Lendo o texto</div>
+      <div class="step" id="step2"><div class="step-icon">🧠</div> Analisando com IA</div>
+      <div class="step" id="step3"><div class="step-icon">🎙️</div> Criando roteiro</div>
+      <div class="step" id="step4"><div class="step-icon">✅</div> Pronto para ouvir</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PLAYER ======= -->
+<div id="player" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="pararEVoltar()">← Voltar</button>
+    <div>
+      <div class="topbar-title">🎙️ Ouvindo</div>
+      <div class="topbar-sub" id="playerSubtitle">Podcast Acadêmico</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+
+    <div class="player-container">
+      <div class="player-titulo" id="playerTitulo">—</div>
+      <div class="player-meta" id="playerMeta">—</div>
+
+      <div class="player-progress">
+        <div class="player-progress-fill" id="progressFill"></div>
+      </div>
+      <div class="player-time">
+        <span id="tempoAtual">0:00</span>
+        <span id="tempoTotal">0:00</span>
+      </div>
+
+      <div class="player-controls">
+        <button class="btn-control" onclick="reiniciar()" title="Reiniciar">⏮</button>
+        <button class="btn-play" id="btnPlay" onclick="togglePlay()">▶</button>
+        <button class="btn-control" onclick="pular(30)" title="Pular 30s">+30</button>
+      </div>
+
+      <div class="velocidade-row">
+        <span class="vel-label">Velocidade:</span>
+        <button class="vel-btn" onclick="setVelocidade(0.75)">0.75x</button>
+        <button class="vel-btn ativo" onclick="setVelocidade(1)">1x</button>
+        <button class="vel-btn" onclick="setVelocidade(1.25)">1.25x</button>
+        <button class="vel-btn" onclick="setVelocidade(1.5)">1.5x</button>
+      </div>
+
+      <div class="gravacao-row" id="gravacaoRow" style="display:none">
+        <div class="rec-dot"></div>
+        <div class="rec-texto">Gravando áudio para download…</div>
+        <span style="font-size:0.72rem;color:var(--muted);font-weight:700" id="recTempo">0:00</span>
+      </div>
+    </div>
+
+    <div class="roteiro-box">
+      <div class="roteiro-label">Roteiro do episódio</div>
+      <div class="roteiro-texto" id="roteiroTexto">—</div>
+    </div>
+
+    <div class="acoes-row">
+      <button class="btn-acao btn-salvar" onclick="salvarBiblioteca()">💾 Salvar</button>
+      <button class="btn-acao btn-download" onclick="iniciarDownload()">⬇️ MP3</button>
+      <button class="btn-acao btn-novo" onclick="novoUpload()">+ Novo</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======= BIBLIOTECA ======= -->
+<div id="biblioteca" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
+    <div>
+      <div class="topbar-title">🎧 Minha Biblioteca</div>
+      <div class="topbar-sub" id="bibliotecaCount">0 podcasts salvos</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="content">
+    <div id="bibliotecaLista"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ CONFIG ============
+const OPENAI_API_KEY = "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"; // ← Substitua pela sua chave OpenAI
+
+const PROMPT_SISTEMA = `Você é "Prof. Alex", apresentador do podcast acadêmico "Mente Aberta". 
+Sua missão é transformar textos acadêmicos em episódios envolventes, acessíveis e analíticos.
+
+A partir do texto enviado, crie um roteiro de podcast seguindo EXATAMENTE esta estrutura:
+
+ABERTURA: Cumprimente o ouvinte de forma calorosa, apresente o tema e diga o que aprenderá.
+
+CONTEXTO: Explique o contexto geral em 2 a 3 parágrafos simples, como se conversasse com alguém que nunca ouviu falar do tema. Use analogias do dia a dia.
+
+PONTOS PRINCIPAIS: Apresente os 3 a 5 pontos mais importantes do texto. Para cada um diga: "O primeiro ponto importante é..." Use linguagem clara e direta.
+
+ANÁLISE CRÍTICA: Reflita sobre a relevância do tema, possíveis aplicações práticas e pontos de debate ou limitações.
+
+FECHAMENTO: Resuma os aprendizados em 3 frases curtas e encoraje o ouvinte a aprofundar o estudo.
+
+REGRAS OBRIGATÓRIAS:
+- Escreva APENAS em formato de fala natural, como se estivesse conversando
+- NUNCA use bullet points, listas numeradas, markdown ou símbolos especiais
+- NUNCA use asteriscos, hashtags ou qualquer formatação especial
+- Evite jargões sem explicação
+- Máximo de 1.200 palavras
+- Comece diretamente com a fala da abertura, sem títulos`;
+
+// ============ ESTADO ============
+let textoAtual = '';
+let roteiroAtual = '';
+let tituloAtual = '';
+let utterance = null;
+let synth = window.speechSynthesis;
+let isPlaying = false;
+let velocidade = 1;
+let palavras = [];
+let palavraAtual = 0;
+let mediaRecorder = null;
+let audioChunks = [];
+let audioBlob = null;
+let recTimer = null;
+let recSegundos = 0;
+let totalPalavras = 0;
+let biblioteca = [];
+
+// Carregar biblioteca
+try {
+  biblioteca = JSON.parse(localStorage.getItem('podcast_biblioteca') || '[]');
+} catch(e) { biblioteca = []; }
+
+// ============ NAVEGAÇÃO ============
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'home') renderRecentes();
+  if (id === 'biblioteca') renderBiblioteca();
+}
+
+// ============ UPLOAD ============
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (file) processarArquivo(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag');
+  const file = event.dataTransfer.files[0];
+  if (file) processarArquivo(file);
+}
+
+async function processarArquivo(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  let texto = '';
+
+  try {
+    if (ext === 'txt') {
+      texto = await file.text();
+    } else if (ext === 'pdf') {
+      texto = await extrairPDF(file);
+    } else if (ext === 'docx') {
+      texto = await extrairDOCX(file);
+    } else {
+      showToast('Formato não suportado. Use PDF, DOCX ou TXT.', 'error');
+      return;
+    }
+  } catch(e) {
+    showToast('Erro ao ler o arquivo: ' + e.message, 'error');
+    return;
+  }
+
+  if (!texto.trim()) {
+    showToast('Não foi possível extrair texto do arquivo.', 'error');
+    return;
+  }
+
+  textoAtual = texto.trim();
+
+  // Mostrar arquivo selecionado
+  const icons = { pdf: '📕', docx: '📘', txt: '📄' };
+  document.getElementById('arquivoIcone').textContent = icons[ext] || '📄';
+  document.getElementById('arquivoNome').textContent = file.name;
+  document.getElementById('arquivoSelecionado').style.display = 'flex';
+
+  // Sugerir título
+  if (!document.getElementById('tituloInput').value) {
+    document.getElementById('tituloInput').value = file.name.replace(/\.[^.]+$/, '');
+  }
+
+  // Habilitar botão
+  const btn = document.getElementById('btnGerar');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+function removerArquivo() {
+  textoAtual = '';
+  document.getElementById('arquivoSelecionado').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('btnGerar').style.opacity = '0.5';
+  document.getElementById('btnGerar').style.pointerEvents = 'none';
+}
+
+// Extrair texto de PDF usando pdf.js
+async function extrairPDF(file) {
+  if (!window.pdfjsLib) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let texto = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    texto += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return texto;
+}
+
+// Extrair texto de DOCX usando mammoth.js
+async function extrairDOCX(file) {
+  if (!window.mammoth) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+// ============ GERAR PODCAST ============
+async function gerarPodcast() {
+  if (!textoAtual) { showToast('Selecione um arquivo primeiro!', 'error'); return; }
+
+  tituloAtual = document.getElementById('tituloInput').value.trim() || 'Podcast Acadêmico';
+  goScreen('gerando');
+
+  // Animar steps
+  const steps = ['step1','step2','step3','step4'];
+  let stepAtual = 0;
+
+  const animarStep = setInterval(() => {
+    if (stepAtual > 0) {
+      document.getElementById(steps[stepAtual-1]).className = 'step feito';
+      document.getElementById(steps[stepAtual-1]).querySelector('.step-icon').textContent = '✅';
+    }
+    if (stepAtual < steps.length) {
+      document.getElementById(steps[stepAtual]).className = 'step ativo';
+      stepAtual++;
+    } else {
+      clearInterval(animarStep);
+    }
+  }, 1200);
+
+  try {
+    // Limitar texto para não exceder tokens
+    const textoLimitado = textoAtual.slice(0, 8000);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 2000,
+        messages: [
+          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'user', content: `Aqui está o texto para transformar em podcast:\n\n${textoLimitado}` }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Erro na API OpenAI');
+    }
+
+    const data = await response.json();
+    roteiroAtual = data.choices[0].message.content.trim();
+
+    clearInterval(animarStep);
+    steps.forEach((s, i) => {
+      document.getElementById(s).className = 'step feito';
+      document.getElementById(s).querySelector('.step-icon').textContent = '✅';
+    });
+
+    setTimeout(() => iniciarPlayer(), 500);
+
+  } catch(e) {
+    clearInterval(animarStep);
+    showToast('Erro ao gerar: ' + e.message, 'error');
+    goScreen('upload');
+  }
+}
+
+// ============ PLAYER ============
+function iniciarPlayer() {
+  goScreen('player');
+
+  document.getElementById('playerTitulo').textContent = tituloAtual;
+  document.getElementById('playerSubtitle').textContent = tituloAtual;
+  document.getElementById('playerMeta').textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  document.getElementById('roteiroTexto').textContent = roteiroAtual;
+
+  palavras = roteiroAtual.split(/\s+/);
+  totalPalavras = palavras.length;
+  palavraAtual = 0;
+
+  // Estimar tempo total (150 palavras por minuto)
+  const minutos = Math.round(totalPalavras / 150);
+  const segundos = Math.round((totalPalavras / 150 - minutos) * 60);
+  document.getElementById('tempoTotal').textContent = `${minutos}:${segundos.toString().padStart(2,'0')}`;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('tempoAtual').textContent = '0:00';
+
+  audioChunks = [];
+  audioBlob = null;
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    pausar();
+  } else {
+    reproduzir();
+  }
+}
+
+function reproduzir() {
+  if (!roteiroAtual) return;
+
+  synth.cancel();
+
+  utterance = new SpeechSynthesisUtterance(roteiroAtual);
+  utterance.lang = 'pt-BR';
+  utterance.rate = velocidade;
+  utterance.pitch = 1;
+
+  // Tentar usar voz em português
+  const vozes = synth.getVoices();
+  const vozPT = vozes.find(v => v.lang.startsWith('pt')) || vozes[0];
+  if (vozPT) utterance.voice = vozPT;
+
+  utterance.onboundary = (event) => {
+    if (event.name === 'word') {
+      palavraAtual++;
+      const pct = Math.min((palavraAtual / totalPalavras) * 100, 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+
+      const minutos = Math.floor((palavraAtual / 150 / velocidade));
+      const segs = Math.floor(((palavraAtual / 150 / velocidade) - minutos) * 60);
+      document.getElementById('tempoAtual').textContent = `${minutos}:${segs.toString().padStart(2,'0')}`;
+    }
+  };
+
+  utterance.onend = () => {
+    isPlaying = false;
+    document.getElementById('btnPlay').textContent = '▶';
+    document.getElementById('progressFill').style.width = '100%';
+    pararGravacao();
+  };
+
+  utterance.onerror = () => {
+    isPlaying = false;
+    document.getElementById('btnPlay').textContent = '▶';
+  };
+
+  synth.speak(utterance);
+  isPlaying = true;
+  document.getElementById('btnPlay').textContent = '⏸';
+  iniciarGravacao();
+}
+
+function pausar() {
+  synth.pause();
+  isPlaying = false;
+  document.getElementById('btnPlay').textContent = '▶';
+}
+
+function reiniciar() {
+  synth.cancel();
+  isPlaying = false;
+  palavraAtual = 0;
+  document.getElementById('btnPlay').textContent = '▶';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('tempoAtual').textContent = '0:00';
+  pararGravacao();
+}
+
+function pular(segundos) {
+  // Estima palavras a pular
+  const palavrasAPular = Math.round(segundos * (150 * velocidade / 60));
+  palavraAtual = Math.min(palavraAtual + palavrasAPular, totalPalavras);
+  if (isPlaying) {
+    const textoRestante = palavras.slice(palavraAtual).join(' ');
+    synth.cancel();
+    utterance = new SpeechSynthesisUtterance(textoRestante);
+    utterance.lang = 'pt-BR';
+    utterance.rate = velocidade;
+    const vozes = synth.getVoices();
+    const vozPT = vozes.find(v => v.lang.startsWith('pt')) || vozes[0];
+    if (vozPT) utterance.voice = vozPT;
+    utterance.onend = () => { isPlaying = false; document.getElementById('btnPlay').textContent = '▶'; pararGravacao(); };
+    synth.speak(utterance);
+  }
+}
+
+function setVelocidade(vel) {
+  velocidade = vel;
+  document.querySelectorAll('.vel-btn').forEach(b => b.classList.remove('ativo'));
+  event.target.classList.add('ativo');
+  if (isPlaying) {
+    synth.cancel();
+    isPlaying = false;
+    document.getElementById('btnPlay').textContent = '▶';
+  }
+}
+
+function pararEVoltar() {
+  synth.cancel();
+  isPlaying = false;
+  pararGravacao();
+  goScreen('home');
+}
+
+function novoUpload() {
+  synth.cancel();
+  isPlaying = false;
+  pararGravacao();
+  textoAtual = '';
+  roteiroAtual = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('arquivoSelecionado').style.display = 'none';
+  document.getElementById('tituloInput').value = '';
+  document.getElementById('btnGerar').style.opacity = '0.5';
+  document.getElementById('btnGerar').style.pointerEvents = 'none';
+  goScreen('upload');
+}
+
+// ============ GRAVAÇÃO ============
+async function iniciarGravacao() {
+  try {
+    // Gravar áudio do sistema via getUserMedia
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+
+    document.getElementById('gravacaoRow').style.display = 'flex';
+    recSegundos = 0;
+    recTimer = setInterval(() => {
+      recSegundos++;
+      const m = Math.floor(recSegundos / 60);
+      const s = recSegundos % 60;
+      document.getElementById('recTempo').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+  } catch(e) {
+    // Se não conseguir gravar, continua sem gravação
+    console.log('Gravação não disponível:', e.message);
+  }
+}
+
+function pararGravacao() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  clearInterval(recTimer);
+  document.getElementById('gravacaoRow').style.display = 'none';
+}
+
+function iniciarDownload() {
+  if (!audioBlob) {
+    showToast('Ouça o podcast primeiro para gravar o áudio!', 'error');
+    return;
+  }
+  const url = URL.createObjectURL(audioBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = tituloAtual.replace(/[^a-zA-Z0-9]/g, '_') + '.webm';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Download iniciado! ✅', 'success');
+}
+
+// ============ BIBLIOTECA ============
+function salvarBiblioteca() {
+  if (!roteiroAtual) return;
+
+  const existente = biblioteca.findIndex(p => p.titulo === tituloAtual);
+  const podcast = {
+    id: Date.now(),
+    titulo: tituloAtual,
+    roteiro: roteiroAtual,
+    texto: textoAtual,
+    data: new Date().toLocaleDateString('pt-BR'),
+    palavras: totalPalavras
+  };
+
+  if (existente >= 0) {
+    biblioteca[existente] = podcast;
+  } else {
+    biblioteca.unshift(podcast);
+  }
+
+  // Manter máximo de 20 podcasts
+  if (biblioteca.length > 20) biblioteca = biblioteca.slice(0, 20);
+
+  localStorage.setItem('podcast_biblioteca', JSON.stringify(biblioteca));
+  showToast('Podcast salvo na biblioteca! 💾', 'success');
+  renderRecentes();
+}
+
+function renderRecentes() {
+  const lista = document.getElementById('recentesLista');
+  if (!biblioteca.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">Nenhum podcast salvo ainda.<br>Crie seu primeiro podcast acima!</div></div>`;
+    return;
+  }
+  lista.innerHTML = biblioteca.slice(0, 3).map(p => cardPodcast(p)).join('');
+}
+
+function renderBiblioteca() {
+  const lista = document.getElementById('bibliotecaLista');
+  const count = document.getElementById('bibliotecaCount');
+  count.textContent = `${biblioteca.length} podcast${biblioteca.length !== 1 ? 's' : ''} salvo${biblioteca.length !== 1 ? 's' : ''}`;
+
+  if (!biblioteca.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">🎧</div><div class="empty-text">Sua biblioteca está vazia.<br>Crie e salve podcasts para estudar depois!</div></div>`;
+    return;
+  }
+  lista.innerHTML = biblioteca.map(p => cardPodcast(p)).join('');
+}
+
+function cardPodcast(p) {
+  const minutos = Math.round(p.palavras / 150);
+  return `
+    <div class="podcast-card" onclick="abrirPodcast(${p.id})">
+      <div class="podcast-icon">🎙️</div>
+      <div class="podcast-info">
+        <div class="podcast-titulo">${p.titulo}</div>
+        <div class="podcast-meta">📅 ${p.data} · ⏱ ~${minutos} min</div>
+      </div>
+      <div class="podcast-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon" onclick="excluirPodcast(${p.id})" title="Excluir">🗑</button>
+      </div>
+    </div>
+  `;
+}
+
+function abrirPodcast(id) {
+  const p = biblioteca.find(x => x.id === id);
+  if (!p) return;
+  tituloAtual = p.titulo;
+  roteiroAtual = p.roteiro;
+  textoAtual = p.texto || '';
+  iniciarPlayer();
+}
+
+function excluirPodcast(id) {
+  if (!confirm('Excluir este podcast da biblioteca?')) return;
+  biblioteca = biblioteca.filter(p => p.id !== id);
+  localStorage.setItem('podcast_biblioteca', JSON.stringify(biblioteca));
+  renderBiblioteca();
+  renderRecentes();
+  showToast('Podcast excluído.', 'success');
+}
+
+// ============ TOAST ============
+function showToast(msg, tipo = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init
+renderRecentes();
+</script>
+</body>
+</html>
