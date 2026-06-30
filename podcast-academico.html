@@ -868,20 +868,39 @@ function togglePlay() {
   }
 }
 
+// Pré-carregar vozes (necessário no Android Chrome)
+let vozCarregada = null;
+
+function carregarVoz() {
+  const vozes = synth.getVoices();
+  const vozPT = vozes.find(v => v.lang.startsWith('pt-BR')) ||
+                vozes.find(v => v.lang.startsWith('pt')) ||
+                vozes[0];
+  if (vozPT) vozCarregada = vozPT;
+}
+
+// Carregar vozes quando disponíveis
+carregarVoz();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = carregarVoz;
+}
+
 function reproduzir() {
   if (!roteiroAtual) return;
 
+  // No Android, às vezes o synth trava — resetar antes de falar
   synth.cancel();
 
-  utterance = new SpeechSynthesisUtterance(roteiroAtual);
-  utterance.lang = 'pt-BR';
-  utterance.rate = velocidade;
-  utterance.pitch = 1;
+  // Pequeno delay para garantir que o cancel processou
+  setTimeout(() => {
+    utterance = new SpeechSynthesisUtterance(roteiroAtual);
+    utterance.lang = 'pt-BR';
+    utterance.rate = velocidade;
+    utterance.pitch = 1;
 
-  // Tentar usar voz em português
-  const vozes = synth.getVoices();
-  const vozPT = vozes.find(v => v.lang.startsWith('pt')) || vozes[0];
-  if (vozPT) utterance.voice = vozPT;
+    // Usar voz pré-carregada ou tentar carregar agora
+    if (!vozCarregada) carregarVoz();
+    if (vozCarregada) utterance.voice = vozCarregada;
 
   utterance.onboundary = (event) => {
     if (event.name === 'word') {
@@ -907,10 +926,11 @@ function reproduzir() {
     document.getElementById('btnPlay').textContent = '▶';
   };
 
-  synth.speak(utterance);
-  isPlaying = true;
-  document.getElementById('btnPlay').textContent = '⏸';
-  iniciarGravacao();
+    synth.speak(utterance);
+    isPlaying = true;
+    document.getElementById('btnPlay').textContent = '⏸';
+    iniciarGravacao();
+  }, 100); // delay para Android
 }
 
 function pausar() {
