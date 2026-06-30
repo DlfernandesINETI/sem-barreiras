@@ -62,6 +62,20 @@ html, body {
   color: var(--text);
 }
 
+.home-link {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 .content { padding: 1.2rem; flex: 1; }
 
 /* ======= HOME ======= */
@@ -473,6 +487,8 @@ html, body {
 .toast.success { border-color: var(--green); color: var(--green); }
 .toast.error { border-color: var(--red); color: var(--red); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body>
 
@@ -500,7 +516,7 @@ html, body {
 <!-- ======= UPLOAD ======= -->
 <div id="upload" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
     <div>
       <div class="topbar-title">📄 Novo Podcast</div>
       <div class="topbar-sub">Faça upload do material</div>
@@ -554,7 +570,7 @@ html, body {
 <!-- ======= PLAYER ======= -->
 <div id="player" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="pararEVoltar()">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="pararEVoltar()">← Voltar</button>
     <div>
       <div class="topbar-title">🎙️ Ouvindo</div>
       <div class="topbar-sub" id="playerSubtitle">Podcast Acadêmico</div>
@@ -613,7 +629,7 @@ html, body {
 <!-- ======= BIBLIOTECA ======= -->
 <div id="biblioteca" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goScreen('home')">← Voltar</button>
     <div>
       <div class="topbar-title">🎧 Minha Biblioteca</div>
       <div class="topbar-sub" id="bibliotecaCount">0 podcasts salvos</div>
@@ -629,7 +645,7 @@ html, body {
 
 <script>
 // ============ CONFIG ============
-const OPENAI_API_KEY = "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"; // ← Substitua pela sua chave OpenAI
+const OPENAI_API_KEY = "SUA_CHAVE_AQUI"; // ← Substitua pela sua chave OpenAI
 
 const PROMPT_SISTEMA = `Você é "Prof. Alex", apresentador do podcast acadêmico "Mente Aberta". 
 Sua missão é transformar textos acadêmicos em episódios envolventes, acessíveis e analíticos.
@@ -753,10 +769,9 @@ function removerArquivo() {
 
 // Extrair texto de PDF usando pdf.js
 async function extrairPDF(file) {
-  if (!window.pdfjsLib) {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
+  // Configurar worker do PDF.js
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let texto = '';
@@ -770,9 +785,6 @@ async function extrairPDF(file) {
 
 // Extrair texto de DOCX usando mammoth.js
 async function extrairDOCX(file) {
-  if (!window.mammoth) {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
-  }
   const arrayBuffer = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value;
