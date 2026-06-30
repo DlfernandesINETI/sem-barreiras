@@ -124,6 +124,20 @@ html, body {
   color: var(--text);
 }
 
+.home-link {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 .content { padding: 1.2rem; flex: 1; }
 
 /* ======= MODO PROFESSOR ======= */
@@ -500,7 +514,7 @@ html, body {
 <!-- TELA PROFESSOR -->
 <div id="professor" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
     <div>
       <div class="topbar-title">📅 Montar Rotina</div>
       <div class="topbar-sub">Adicione as atividades do dia</div>
@@ -555,7 +569,7 @@ html, body {
 <!-- TELA ALUNO — ENTRADA DE CÓDIGO -->
 <div id="aluno-entrada" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
     <div>
       <div class="topbar-title">🎒 Minha Rotina</div>
       <div class="topbar-sub">Digite o código do professor</div>
@@ -575,7 +589,7 @@ html, body {
 <!-- TELA ALUNO — ROTINA -->
 <div id="aluno-rotina" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goMode('aluno-entrada')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goMode('aluno-entrada')">← Voltar</button>
     <div>
       <div class="topbar-title" id="alunoTitulo">📅 Minha Rotina</div>
       <div class="topbar-sub" id="alunoSub">Hoje</div>
@@ -602,7 +616,7 @@ html, body {
 <!-- TELA ALUNO PRÓPRIO -->
 <div id="aluno-proprio" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
     <div>
       <div class="topbar-title">✏️ Minha Rotina</div>
       <div class="topbar-sub">Monte ou complemente sua rotina</div>
