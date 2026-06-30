@@ -156,6 +156,21 @@
 
   .back-btn:hover { border-color: var(--text); color: var(--text); }
 
+  .home-link {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+  .home-link:hover { border-color: var(--text); color: var(--text); }
+
   .screen-title {
     font-size: 0.85rem;
     font-weight: 700;
@@ -370,7 +385,8 @@
 <!-- TELA PROFESSOR -->
 <div id="professor">
   <div class="top-bar">
-    <button class="back-btn" onclick="goBack()">← Voltar</button>
+    <a class="home-link" href="index.html" title="Voltar ao início">🏠</a>
+  <button class="back-btn" onclick="goBack()">← Voltar</button>
     <div class="screen-title">Modo Professor</div>
     <div class="status-pill" id="statusPill">
       <div class="dot" id="statusDot"></div>
@@ -554,14 +570,20 @@ function startListening() {
       frases.forEach(f => {
         const fraseLimpa = f.trim();
         if (!fraseLimpa) return;
-        // Evita duplicar se a última frase salva for igual ou estiver contida na nova
-        const ultima = finalPhrases[finalPhrases.length - 1] || '';
-        if (fraseLimpa === ultima || ultima.includes(fraseLimpa) || fraseLimpa.includes(ultima) && ultima.length > 0) {
-          // Substitui a última em vez de duplicar, mantendo a versão mais longa/recente
-          if (fraseLimpa.length >= ultima.length) finalPhrases[finalPhrases.length - 1] = fraseLimpa;
-        } else {
-          finalPhrases.push(fraseLimpa);
+        // Compara contra as últimas 3 frases salvas (não só a última) para pegar duplicações fora de ordem
+        const recentes = finalPhrases.slice(-3);
+        let duplicada = false;
+        for (let j = 0; j < recentes.length; j++) {
+          const r = recentes[j];
+          if (fraseLimpa === r || r.includes(fraseLimpa) || (fraseLimpa.includes(r) && r.length > 3)) {
+            duplicada = true;
+            // Se a nova é mais completa, substitui a antiga na posição correta
+            const idxReal = finalPhrases.length - recentes.length + j;
+            if (fraseLimpa.length > r.length) finalPhrases[idxReal] = fraseLimpa;
+            break;
+          }
         }
+        if (!duplicada) finalPhrases.push(fraseLimpa);
       });
       if (finalPhrases.length > 50) finalPhrases = finalPhrases.slice(-50);
     }
@@ -579,7 +601,12 @@ function startListening() {
 
   recognition.onend = () => {
     if (isListening) {
-      try { recognition.start(); } catch(e) {}
+      // Pequeno delay evita reprocessamento do buffer de áudio pelo Chrome Android
+      setTimeout(() => {
+        if (isListening) {
+          try { recognition.start(); } catch(e) {}
+        }
+      }, 300);
     }
   };
 
