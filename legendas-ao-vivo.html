@@ -542,20 +542,27 @@ function startListening() {
     let interim = '';
     let newFinal = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (i < lastResultIndex) continue;
       const t = event.results[i][0].transcript;
       if (event.results[i].isFinal) {
         newFinal += t + ' ';
-        lastResultIndex = i + 1;
       } else {
         interim += t;
       }
     }
     if (newFinal) {
-      // Cada frase finalizada vira um item do array
       const frases = newFinal.trim().split(/(?<=[.!?])\s+|(?<=\s{2,})/);
-      frases.forEach(f => { if (f.trim()) finalPhrases.push(f.trim()); });
-      // Manter no máximo 50 frases para não sobrecarregar
+      frases.forEach(f => {
+        const fraseLimpa = f.trim();
+        if (!fraseLimpa) return;
+        // Evita duplicar se a última frase salva for igual ou estiver contida na nova
+        const ultima = finalPhrases[finalPhrases.length - 1] || '';
+        if (fraseLimpa === ultima || ultima.includes(fraseLimpa) || fraseLimpa.includes(ultima) && ultima.length > 0) {
+          // Substitui a última em vez de duplicar, mantendo a versão mais longa/recente
+          if (fraseLimpa.length >= ultima.length) finalPhrases[finalPhrases.length - 1] = fraseLimpa;
+        } else {
+          finalPhrases.push(fraseLimpa);
+        }
+      });
       if (finalPhrases.length > 50) finalPhrases = finalPhrases.slice(-50);
     }
     updatePreview(finalPhrases, interim);
