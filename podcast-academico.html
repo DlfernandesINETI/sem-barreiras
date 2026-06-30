@@ -645,30 +645,7 @@ html, body {
 
 <script>
 // ============ CONFIG ============
-const OPENAI_API_KEY = "SUA_CHAVE_AQUI"; // ← Substitua pela sua chave OpenAI
-
-const PROMPT_SISTEMA = `Você é "Prof. Alex", apresentador do podcast acadêmico "Mente Aberta". 
-Sua missão é transformar textos acadêmicos em episódios envolventes, acessíveis e analíticos.
-
-A partir do texto enviado, crie um roteiro de podcast seguindo EXATAMENTE esta estrutura:
-
-ABERTURA: Cumprimente o ouvinte de forma calorosa, apresente o tema e diga o que aprenderá.
-
-CONTEXTO: Explique o contexto geral em 2 a 3 parágrafos simples, como se conversasse com alguém que nunca ouviu falar do tema. Use analogias do dia a dia.
-
-PONTOS PRINCIPAIS: Apresente os 3 a 5 pontos mais importantes do texto. Para cada um diga: "O primeiro ponto importante é..." Use linguagem clara e direta.
-
-ANÁLISE CRÍTICA: Reflita sobre a relevância do tema, possíveis aplicações práticas e pontos de debate ou limitações.
-
-FECHAMENTO: Resuma os aprendizados em 3 frases curtas e encoraje o ouvinte a aprofundar o estudo.
-
-REGRAS OBRIGATÓRIAS:
-- Escreva APENAS em formato de fala natural, como se estivesse conversando
-- NUNCA use bullet points, listas numeradas, markdown ou símbolos especiais
-- NUNCA use asteriscos, hashtags ou qualquer formatação especial
-- Evite jargões sem explicação
-- Máximo de 1.200 palavras
-- Comece diretamente com a fala da abertura, sem títulos`;
+const WORKER_URL = "https://podcast-proxy.dlfernandes.workers.dev/";
 
 // ============ ESTADO ============
 let textoAtual = '';
@@ -828,29 +805,21 @@ async function gerarPodcast() {
     // Limitar texto para não exceder tokens
     const textoLimitado = textoAtual.slice(0, 8000);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 2000,
-        messages: [
-          { role: 'system', content: PROMPT_SISTEMA },
-          { role: 'user', content: `Aqui está o texto para transformar em podcast:\n\n${textoLimitado}` }
-        ]
-      })
+      body: JSON.stringify({ texto: textoLimitado })
     });
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error?.message || 'Erro na API OpenAI');
+      throw new Error(err.error || 'Erro ao gerar o roteiro');
     }
 
     const data = await response.json();
-    roteiroAtual = data.choices[0].message.content.trim();
+    roteiroAtual = data.roteiro.trim();
 
     clearInterval(animarStep);
     steps.forEach((s, i) => {
