@@ -599,10 +599,10 @@ html, body {
 
       <div class="velocidade-row">
         <span class="vel-label">Velocidade:</span>
-        <button class="vel-btn" onclick="setVelocidade(0.75)">0.75x</button>
-        <button class="vel-btn ativo" onclick="setVelocidade(1)">1x</button>
-        <button class="vel-btn" onclick="setVelocidade(1.25)">1.25x</button>
-        <button class="vel-btn" onclick="setVelocidade(1.5)">1.5x</button>
+        <button class="vel-btn" onclick="setVelocidade(0.75, this)">0.75x</button>
+        <button class="vel-btn ativo" onclick="setVelocidade(1, this)">1x</button>
+        <button class="vel-btn" onclick="setVelocidade(1.25, this)">1.25x</button>
+        <button class="vel-btn" onclick="setVelocidade(1.5, this)">1.5x</button>
       </div>
 
       <div class="gravacao-row" id="gravacaoRow" style="display:none">
@@ -651,18 +651,10 @@ const WORKER_URL = "https://podcast-proxy.dlfernandes.workers.dev/";
 let textoAtual = '';
 let roteiroAtual = '';
 let tituloAtual = '';
-let utterance = null;
-let synth = window.speechSynthesis;
 let isPlaying = false;
 let velocidade = 1;
-let palavras = [];
-let palavraAtual = 0;
-let mediaRecorder = null;
-let audioChunks = [];
+let audioElement = null;
 let audioBlob = null;
-let recTimer = null;
-let recSegundos = 0;
-let totalPalavras = 0;
 let biblioteca = [];
 
 // Carregar biblioteca
@@ -837,158 +829,144 @@ async function gerarPodcast() {
 }
 
 // ============ PLAYER ============
-function iniciarPlayer() {
+async function iniciarPlayer() {
   goScreen('player');
 
   document.getElementById('playerTitulo').textContent = tituloAtual;
   document.getElementById('playerSubtitle').textContent = tituloAtual;
   document.getElementById('playerMeta').textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
   document.getElementById('roteiroTexto').textContent = roteiroAtual;
-
-  palavras = roteiroAtual.split(/\s+/);
-  totalPalavras = palavras.length;
-  palavraAtual = 0;
-
-  // Estimar tempo total (150 palavras por minuto)
-  const minutos = Math.round(totalPalavras / 150);
-  const segundos = Math.round((totalPalavras / 150 - minutos) * 60);
-  document.getElementById('tempoTotal').textContent = `${minutos}:${segundos.toString().padStart(2,'0')}`;
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('tempoAtual').textContent = '0:00';
+  document.getElementById('tempoTotal').textContent = '...';
+  document.getElementById('btnPlay').textContent = '⏳';
+  document.getElementById('btnPlay').disabled = true;
 
-  audioChunks = [];
   audioBlob = null;
+  audioElement = null;
+
+  // Gerar áudio via OpenAI TTS em partes (máx 4000 chars por chamada)
+  try {
+    showToast('Gerando áudio… pode levar alguns segundos 🎙️');
+    const partes = dividirTexto(roteiroAtual, 4000);
+    const audioParts = [];
+
+    for (let i = 0; i < partes.length; i++) {
+      showToast(`Gerando áudio ${i+1} de ${partes.length}…`);
+      const resp = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: partes[i], modo: 'audio' })
+      });
+      if (!resp.ok) throw new Error('Erro ao gerar áudio parte ' + (i+1));
+      const blob = await resp.blob();
+      audioParts.push(blob);
+    }
+
+    // Combinar todas as partes em um único blob
+    audioBlob = new Blob(audioParts, { type: 'audio/mpeg' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Criar elemento de áudio
+    audioElement = new Audio(audioUrl);
+    audioElement.playbackRate = velocidade;
+
+    audioElement.ontimeupdate = () => {
+      if (!audioElement.duration) return;
+      const pct = (audioElement.currentTime / audioElement.duration) * 100;
+      document.getElementById('progressFill').style.width = pct + '%';
+      const m = Math.floor(audioElement.currentTime / 60);
+      const s = Math.floor(audioElement.currentTime % 60);
+      document.getElementById('tempoAtual').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    };
+
+    audioElement.onloadedmetadata = () => {
+      const m = Math.floor(audioElement.duration / 60);
+      const s = Math.floor(audioElement.duration % 60);
+      document.getElementById('tempoTotal').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    };
+
+    audioElement.onended = () => {
+      isPlaying = false;
+      document.getElementById('btnPlay').textContent = '▶';
+      document.getElementById('progressFill').style.width = '100%';
+    };
+
+    document.getElementById('btnPlay').textContent = '▶';
+    document.getElementById('btnPlay').disabled = false;
+    showToast('Áudio pronto! Toque em ▶ para ouvir ✅', 'success');
+
+  } catch(e) {
+    document.getElementById('btnPlay').textContent = '▶';
+    document.getElementById('btnPlay').disabled = false;
+    showToast('Erro ao gerar áudio: ' + e.message, 'error');
+  }
+}
+
+function dividirTexto(texto, maxChars) {
+  const partes = [];
+  let inicio = 0;
+  while (inicio < texto.length) {
+    let fim = inicio + maxChars;
+    if (fim < texto.length) {
+      // Cortar na última frase completa antes do limite
+      const ultimoPonto = texto.lastIndexOf('.', fim);
+      if (ultimoPonto > inicio) fim = ultimoPonto + 1;
+    }
+    partes.push(texto.slice(inicio, fim).trim());
+    inicio = fim;
+  }
+  return partes;
 }
 
 function togglePlay() {
+  if (!audioElement) return;
   if (isPlaying) {
-    pausar();
+    audioElement.pause();
+    isPlaying = false;
+    document.getElementById('btnPlay').textContent = '▶';
   } else {
-    reproduzir();
+    audioElement.play();
+    isPlaying = true;
+    document.getElementById('btnPlay').textContent = '⏸';
   }
 }
 
-// Pré-carregar vozes (necessário no Android Chrome)
-let vozCarregada = null;
 
-function carregarVoz() {
-  const vozes = synth.getVoices();
-  const vozPT = vozes.find(v => v.lang.startsWith('pt-BR')) ||
-                vozes.find(v => v.lang.startsWith('pt')) ||
-                vozes[0];
-  if (vozPT) vozCarregada = vozPT;
-}
 
-// Carregar vozes quando disponíveis
-carregarVoz();
-if (speechSynthesis.onvoiceschanged !== undefined) {
-  speechSynthesis.onvoiceschanged = carregarVoz;
-}
 
-function reproduzir() {
-  if (!roteiroAtual) return;
-
-  // No Android, às vezes o synth trava — resetar antes de falar
-  synth.cancel();
-
-  // Pequeno delay para garantir que o cancel processou
-  setTimeout(() => {
-    utterance = new SpeechSynthesisUtterance(roteiroAtual);
-    utterance.lang = 'pt-BR';
-    utterance.rate = velocidade;
-    utterance.pitch = 1;
-
-    // Usar voz pré-carregada ou tentar carregar agora
-    if (!vozCarregada) carregarVoz();
-    if (vozCarregada) utterance.voice = vozCarregada;
-
-  utterance.onboundary = (event) => {
-    if (event.name === 'word') {
-      palavraAtual++;
-      const pct = Math.min((palavraAtual / totalPalavras) * 100, 100);
-      document.getElementById('progressFill').style.width = pct + '%';
-
-      const minutos = Math.floor((palavraAtual / 150 / velocidade));
-      const segs = Math.floor(((palavraAtual / 150 / velocidade) - minutos) * 60);
-      document.getElementById('tempoAtual').textContent = `${minutos}:${segs.toString().padStart(2,'0')}`;
-    }
-  };
-
-  utterance.onend = () => {
-    isPlaying = false;
-    document.getElementById('btnPlay').textContent = '▶';
-    document.getElementById('progressFill').style.width = '100%';
-    pararGravacao();
-  };
-
-  utterance.onerror = () => {
-    isPlaying = false;
-    document.getElementById('btnPlay').textContent = '▶';
-  };
-
-    synth.speak(utterance);
-    isPlaying = true;
-    document.getElementById('btnPlay').textContent = '⏸';
-    iniciarGravacao();
-  }, 100); // delay para Android
-}
-
-function pausar() {
-  synth.pause();
-  isPlaying = false;
-  document.getElementById('btnPlay').textContent = '▶';
-}
 
 function reiniciar() {
-  synth.cancel();
+  if (!audioElement) return;
+  audioElement.currentTime = 0;
+  audioElement.pause();
   isPlaying = false;
-  palavraAtual = 0;
   document.getElementById('btnPlay').textContent = '▶';
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('tempoAtual').textContent = '0:00';
-  pararGravacao();
 }
 
 function pular(segundos) {
-  // Estima palavras a pular
-  const palavrasAPular = Math.round(segundos * (150 * velocidade / 60));
-  palavraAtual = Math.min(palavraAtual + palavrasAPular, totalPalavras);
-  if (isPlaying) {
-    const textoRestante = palavras.slice(palavraAtual).join(' ');
-    synth.cancel();
-    utterance = new SpeechSynthesisUtterance(textoRestante);
-    utterance.lang = 'pt-BR';
-    utterance.rate = velocidade;
-    const vozes = synth.getVoices();
-    const vozPT = vozes.find(v => v.lang.startsWith('pt')) || vozes[0];
-    if (vozPT) utterance.voice = vozPT;
-    utterance.onend = () => { isPlaying = false; document.getElementById('btnPlay').textContent = '▶'; pararGravacao(); };
-    synth.speak(utterance);
-  }
+  if (!audioElement) return;
+  audioElement.currentTime = Math.min(audioElement.currentTime + segundos, audioElement.duration || 0);
 }
 
-function setVelocidade(vel) {
+function setVelocidade(vel, el) {
   velocidade = vel;
   document.querySelectorAll('.vel-btn').forEach(b => b.classList.remove('ativo'));
-  event.target.classList.add('ativo');
-  if (isPlaying) {
-    synth.cancel();
-    isPlaying = false;
-    document.getElementById('btnPlay').textContent = '▶';
-  }
+  el.classList.add('ativo');
+  if (audioElement) audioElement.playbackRate = vel;
 }
 
 function pararEVoltar() {
-  synth.cancel();
+  if (audioElement) { audioElement.pause(); audioElement.currentTime = 0; }
   isPlaying = false;
-  pararGravacao();
   goScreen('home');
 }
 
 function novoUpload() {
-  synth.cancel();
+  if (audioElement) { audioElement.pause(); audioElement.currentTime = 0; }
   isPlaying = false;
-  pararGravacao();
   textoAtual = '';
   roteiroAtual = '';
   document.getElementById('fileInput').value = '';
@@ -1000,53 +978,20 @@ function novoUpload() {
 }
 
 // ============ GRAVAÇÃO ============
-async function iniciarGravacao() {
-  try {
-    // Gravar áudio do sistema via getUserMedia
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = () => {
-      audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      stream.getTracks().forEach(t => t.stop());
-    };
-    mediaRecorder.start();
-
-    document.getElementById('gravacaoRow').style.display = 'flex';
-    recSegundos = 0;
-    recTimer = setInterval(() => {
-      recSegundos++;
-      const m = Math.floor(recSegundos / 60);
-      const s = recSegundos % 60;
-      document.getElementById('recTempo').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-    }, 1000);
-  } catch(e) {
-    // Se não conseguir gravar, continua sem gravação
-    console.log('Gravação não disponível:', e.message);
-  }
-}
-
-function pararGravacao() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-  clearInterval(recTimer);
-  document.getElementById('gravacaoRow').style.display = 'none';
-}
+// Gravação substituída por download direto do blob MP3 gerado pelo TTS
 
 function iniciarDownload() {
   if (!audioBlob) {
-    showToast('Ouça o podcast primeiro para gravar o áudio!', 'error');
+    showToast('Aguarde o áudio ser gerado!', 'error');
     return;
   }
   const url = URL.createObjectURL(audioBlob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = tituloAtual.replace(/[^a-zA-Z0-9]/g, '_') + '.webm';
+  a.download = tituloAtual.replace(/[^a-zA-Z0-9]/g, '_') + '.mp3';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Download iniciado! ✅', 'success');
+  showToast('Download do MP3 iniciado! ✅', 'success');
 }
 
 // ============ BIBLIOTECA ============
