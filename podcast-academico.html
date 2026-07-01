@@ -996,8 +996,12 @@ function iniciarDownload() {
 
 // ============ BIBLIOTECA ============
 function salvarBiblioteca() {
-  if (!roteiroAtual) return;
+  if (!roteiroAtual) {
+    showToast('Nenhum podcast para salvar!', 'error');
+    return;
+  }
 
+  const palavras = roteiroAtual.split(/\s+/).length;
   const existente = biblioteca.findIndex(p => p.titulo === tituloAtual);
   const podcast = {
     id: Date.now(),
@@ -1005,7 +1009,7 @@ function salvarBiblioteca() {
     roteiro: roteiroAtual,
     texto: textoAtual,
     data: new Date().toLocaleDateString('pt-BR'),
-    palavras: totalPalavras
+    palavras: palavras
   };
 
   if (existente >= 0) {
@@ -1014,12 +1018,15 @@ function salvarBiblioteca() {
     biblioteca.unshift(podcast);
   }
 
-  // Manter máximo de 20 podcasts
   if (biblioteca.length > 20) biblioteca = biblioteca.slice(0, 20);
 
-  localStorage.setItem('podcast_biblioteca', JSON.stringify(biblioteca));
-  showToast('Podcast salvo na biblioteca! 💾', 'success');
-  renderRecentes();
+  try {
+    localStorage.setItem('podcast_biblioteca', JSON.stringify(biblioteca));
+    showToast('Podcast salvo na biblioteca! 💾', 'success');
+    renderRecentes();
+  } catch(e) {
+    showToast('Erro ao salvar: ' + e.message, 'error');
+  }
 }
 
 function renderRecentes() {
@@ -1044,7 +1051,7 @@ function renderBiblioteca() {
 }
 
 function cardPodcast(p) {
-  const minutos = Math.round(p.palavras / 150);
+  const minutos = Math.round((p.palavras || 300) / 150);
   return `
     <div class="podcast-card" onclick="abrirPodcast(${p.id})">
       <div class="podcast-icon">🎙️</div>
