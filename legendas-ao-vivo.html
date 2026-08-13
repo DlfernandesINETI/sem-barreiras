@@ -733,11 +733,23 @@ function startAlunoMode() {
 
     // Mostrar apenas as últimas 3 frases na tela do aluno
     const recentPhrases = (phrases || []).slice(-3);
-    ct.innerHTML = recentPhrases.map((f, i) => {
-      const opacity = i === recentPhrases.length - 1 ? '1' : '0.45';
-      const size = i === recentPhrases.length - 1 ? captionFontSize : captionFontSize * 0.75;
-      return `<p style="opacity:${opacity};font-size:${size}px;margin-bottom:0.5em">${f}</p>`;
-    }).join('');
+
+    // Traduzir se necessário
+    if (idiomaAluno !== 'pt' && recentPhrases.length > 0) {
+      traduzirFrases(recentPhrases).then(traduzidas => {
+        ct.innerHTML = traduzidas.map((f, i) => {
+          const opacity = i === traduzidas.length - 1 ? '1' : '0.45';
+          const size = i === traduzidas.length - 1 ? captionFontSize : captionFontSize * 0.75;
+          return `<p style="opacity:${opacity};font-size:${size}px;margin-bottom:0.5em">${f}</p>`;
+        }).join('');
+      });
+    } else {
+      ct.innerHTML = recentPhrases.map((f, i) => {
+        const opacity = i === recentPhrases.length - 1 ? '1' : '0.45';
+        const size = i === recentPhrases.length - 1 ? captionFontSize : captionFontSize * 0.75;
+        return `<p style="opacity:${opacity};font-size:${size}px;margin-bottom:0.5em">${f}</p>`;
+      }).join('');
+    }
 
     ci.textContent = interim || '';
     ci.style.fontSize = (captionFontSize * 0.65) + 'px';
