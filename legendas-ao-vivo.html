@@ -748,9 +748,10 @@ function startAlunoMode() {
     // Mostrar apenas as últimas 3 frases na tela do aluno
     const recentPhrases = (phrases || []).slice(-3);
 
-    // Traduzir se necessário
-    if (idiomaAluno !== 'pt' && recentPhrases.length > 0) {
-      traduzirFrases(recentPhrases).then(traduzidas => {
+    // Traduzir sempre que idioma do aluno for diferente do idioma do professor
+    const idiomaProfBase = (data && data.idioma) ? data.idioma : 'pt';
+    if (idiomaAluno !== idiomaProfBase && recentPhrases.length > 0) {
+      traduzirFrases(recentPhrases, idiomaProfBase).then(traduzidas => {
         ct.innerHTML = traduzidas.map((f, i) => {
           const opacity = i === traduzidas.length - 1 ? '1' : '0.45';
           const size = i === traduzidas.length - 1 ? captionFontSize : captionFontSize * 0.75;
@@ -791,9 +792,8 @@ window.trocarIdioma = function() {
   }
 };
 
-async function traduzirFrases(frases) {
-  // Extrair código base do idioma do professor (pt-BR → pt, en-US → en)
-  const idiomaProfessorBase = (data && data.idioma) ? data.idioma : idiomaProfessor.split('-')[0];
+async function traduzirFrases(frases, sourceIdioma) {
+  const idiomaProfessorBase = sourceIdioma || 'pt';
   const traduzidas = [];
   for (const frase of frases) {
     const cacheKey = frase + '_' + idiomaAluno;
