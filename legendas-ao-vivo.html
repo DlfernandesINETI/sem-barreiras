@@ -399,7 +399,20 @@
       <div class="sala-badge-label">Código da Sala</div>
       <div class="sala-badge-code" id="salaDisplay">—</div>
     </div>
-    <div class="sala-badge-hint">Passe este código<br>para os alunos</div>
+    <div>
+      <div class="sala-badge-label">Idioma que vou falar</div>
+      <select id="idiomaProfessor" onchange="trocarIdiomaProfessor()" style="background:var(--surface);border:1px solid var(--accent);color:var(--text);border-radius:8px;padding:0.3rem 0.5rem;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;outline:none;margin-top:0.2rem;">
+        <option value="pt-BR">🇧🇷 Português</option>
+        <option value="en-US">🇺🇸 English</option>
+        <option value="es-ES">🇪🇸 Español</option>
+        <option value="de-DE">🇩🇪 Deutsch</option>
+        <option value="fr-FR">🇫🇷 Français</option>
+        <option value="zh-CN">🇨🇳 中文</option>
+        <option value="ar-SA">🇸🇦 العربية</option>
+        <option value="pl-PL">🇵🇱 Polski</option>
+        <option value="uk-UA">🇺🇦 Українська</option>
+      </select>
+    </div>
   </div>
 
   <div class="preview-box">
@@ -480,6 +493,7 @@ const cacheTraducoes = {};
 let currentMode = null;
 let currentSala = null;
 let idiomaAluno = 'pt';
+let idiomaProfessor = 'pt-BR';
 let recognition = null;
 let isListening = false;
 let finalPhrases = []; // array de frases finalizadas
@@ -559,7 +573,7 @@ function startListening() {
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
-  recognition.lang = 'pt-BR';
+  recognition.lang = idiomaProfessor;
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
@@ -693,7 +707,7 @@ window.saveTxt = function() {
 function sendToFirebase(phrases, interim) {
   if (!currentSala) return;
   const salaRef = ref(db, `salas/${currentSala}`);
-  set(salaRef, { phrases: phrases || [], interim: interim || '', ts: Date.now() }).catch(err => {
+  set(salaRef, { phrases: phrases || [], interim: interim || '', idioma: idiomaProfessor.split('-')[0], ts: Date.now() }).catch(err => {
     showError('Erro ao enviar para o Firebase: ' + err.message);
   });
 }
@@ -759,6 +773,15 @@ function startAlunoMode() {
   });
 }
 
+window.trocarIdiomaProfessor = function() {
+  idiomaProfessor = document.getElementById('idiomaProfessor').value;
+  // Se estiver gravando, reiniciar com novo idioma
+  if (isListening) {
+    stopListening();
+    setTimeout(() => startListening(), 300);
+  }
+};
+
 window.trocarIdioma = function() {
   idiomaAluno = document.getElementById('idiomaAluno').value;
   // RTL para árabe
@@ -769,6 +792,8 @@ window.trocarIdioma = function() {
 };
 
 async function traduzirFrases(frases) {
+  // Extrair código base do idioma do professor (pt-BR → pt, en-US → en)
+  const idiomaProfessorBase = (data && data.idioma) ? data.idioma : idiomaProfessor.split('-')[0];
   const traduzidas = [];
   for (const frase of frases) {
     const cacheKey = frase + '_' + idiomaAluno;
@@ -780,7 +805,7 @@ async function traduzirFrases(frases) {
       const resp = await fetch(TRANSLATE_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texto: frase, source: 'pt', target: idiomaAluno })
+        body: JSON.stringify({ texto: frase, source: idiomaProfessorBase, target: idiomaAluno })
       });
       if (resp.ok) {
         const data = await resp.json();
