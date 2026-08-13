@@ -425,6 +425,17 @@
       <span id="alunoStatusLabel">Conectando…</span>
     </div>
     <div class="font-controls">
+      <select id="idiomaAluno" onchange="trocarIdioma()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.3rem 0.5rem;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;outline:none;">
+        <option value="pt">🇧🇷 PT</option>
+        <option value="en">🇺🇸 EN</option>
+        <option value="es">🇪🇸 ES</option>
+        <option value="de">🇩🇪 DE</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="zh">🇨🇳 ZH</option>
+        <option value="ar">🇸🇦 AR</option>
+        <option value="pl">🇵🇱 PL</option>
+        <option value="uk">🇺🇦 UK</option>
+      </select>
       <button class="font-btn" onclick="changeFontSize(-2)">A-</button>
       <button class="font-btn" onclick="changeFontSize(2)">A+</button>
       <button class="font-btn" onclick="goBack()">✕</button>
@@ -461,9 +472,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// ============ CONFIG TRADUÇÃO ============
+const TRANSLATE_ENDPOINT = "https://traduzai.dlfernandes.workers.dev/";
+const cacheTraducoes = {};
+
 // ============ ESTADO GLOBAL ============
 let currentMode = null;
 let currentSala = null;
+let idiomaAluno = 'pt';
 let recognition = null;
 let isListening = false;
 let finalPhrases = []; // array de frases finalizadas
@@ -729,6 +745,44 @@ function startAlunoMode() {
     alunoStatusDot.classList.add('active');
     alunoStatusLabel.textContent = `Ao vivo ✓ — Sala: ${currentSala}`;
   });
+}
+
+window.trocarIdioma = function() {
+  idiomaAluno = document.getElementById('idiomaAluno').value;
+  // RTL para árabe
+  const captionArea = document.querySelector('.caption-area');
+  if (captionArea) {
+    captionArea.style.direction = idiomaAluno === 'ar' ? 'rtl' : 'ltr';
+  }
+};
+
+async function traduzirFrases(frases) {
+  const traduzidas = [];
+  for (const frase of frases) {
+    const cacheKey = frase + '_' + idiomaAluno;
+    if (cacheTraducoes[cacheKey]) {
+      traduzidas.push(cacheTraducoes[cacheKey]);
+      continue;
+    }
+    try {
+      const resp = await fetch(TRANSLATE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: frase, source: 'pt', target: idiomaAluno })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const t = data.traducao || frase;
+        cacheTraducoes[cacheKey] = t;
+        traduzidas.push(t);
+      } else {
+        traduzidas.push(frase);
+      }
+    } catch(e) {
+      traduzidas.push(frase);
+    }
+  }
+  return traduzidas;
 }
 
 window.changeFontSize = function(delta) {
