@@ -621,6 +621,15 @@ button { font-family: inherit; }
     </div>
 
     <div class="prof-section">
+      <h3>🔊 Voz</h3>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5">Escolha a voz que vai ler os pictogramas. As vozes disponíveis dependem do celular ou navegador usado.</p>
+      <div class="field">
+        <select id="vozSelect" onchange="salvarVoz(this.value)"></select>
+      </div>
+      <button class="btn-secundario" style="width:100%" onclick="testarVoz()">🔊 Testar esta voz</button>
+    </div>
+
+    <div class="prof-section">
       <h3>📐 Tamanho dos cartões</h3>
       <div class="tamanho-opts">
         <button class="tam-btn" data-tam="P" onclick="mudarTamanho('P')">Pequeno</button>
@@ -796,6 +805,7 @@ window.abrirTela = function(tela) {
     aplicarTamanhoUI();
     renderCustomList();
     document.getElementById('personagemInput').value = personagemAtual;
+    popularVozes();
   }
 };
 
@@ -1078,20 +1088,57 @@ function renderRotinaEditList() {
 }
 
 // ============ VOZ (Web Speech API) ============
-function carregarVoz() {
-  const vozes = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-  vozPtBR = vozes.find(v => v.lang === 'pt-BR') || vozes.find(v => v.lang && v.lang.startsWith('pt')) || null;
+function listarVozesPt() {
+  const todas = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  const pt = todas.filter(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
+  return pt.length ? pt : todas; // se o aparelho não tiver voz em português, mostra todas
 }
+
+function carregarVoz() {
+  const vozes = listarVozesPt();
+  const nomeSalvo = localStorage.getItem('pictogramas_voz_nome');
+  vozPtBR = (nomeSalvo && vozes.find(v => v.name === nomeSalvo))
+    || vozes.find(v => v.lang === 'pt-BR')
+    || vozes[0]
+    || null;
+}
+
 if ('speechSynthesis' in window) {
   carregarVoz();
-  window.speechSynthesis.onvoiceschanged = carregarVoz;
+  window.speechSynthesis.onvoiceschanged = () => { carregarVoz(); popularVozes(); };
 }
+
+function popularVozes() {
+  const select = document.getElementById('vozSelect');
+  if (!select) return;
+  const vozes = listarVozesPt();
+
+  if (!vozes.length) {
+    select.innerHTML = '<option value="">Nenhuma voz encontrada neste navegador</option>';
+    return;
+  }
+
+  select.innerHTML = vozes.map(v =>
+    `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} (${v.lang})</option>`
+  ).join('');
+
+  if (vozPtBR) select.value = vozPtBR.name;
+}
+
+window.salvarVoz = function(nome) {
+  localStorage.setItem('pictogramas_voz_nome', nome);
+  carregarVoz();
+};
+
+window.testarVoz = function() {
+  falarTexto('Olá! Esta é a voz que vai ler os pictogramas.', 1);
+};
 
 function falarTexto(texto, taxa) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(texto);
-  u.lang = 'pt-BR';
+  u.lang = (vozPtBR && vozPtBR.lang) || 'pt-BR';
   if (vozPtBR) u.voice = vozPtBR;
   u.rate = taxa || 1;
   window.speechSynthesis.speak(u);
