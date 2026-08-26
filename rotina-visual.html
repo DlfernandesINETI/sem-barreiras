@@ -465,6 +465,53 @@ html, body {
 .empty-icon { font-size: 3rem; margin-bottom: 0.5rem; }
 .empty-text { font-size: 0.9rem; }
 
+/* Abas de dia da semana */
+.dia-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.dia-tab {
+  flex: 1;
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 0.55rem 0.2rem;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--muted);
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.dia-tab.active {
+  border-color: #4f8ef7;
+  background: #eef2ff;
+  color: #4f8ef7;
+}
+
+.dia-tab .badge-count {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  background: #4f8ef7;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dia-tab.active .badge-count { background: #a78bfa; }
+
 /* Alerta de conclusão */
 .confetti-msg {
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -486,7 +533,7 @@ html, body {
   <div class="splash-logo">📅</div>
   <div>
     <div class="splash-title">Rotina <span>Visual</span></div>
-    <p class="splash-sub">Organize as atividades do dia de forma visual e acessível para estudantes com TEA e TDAH.</p>
+    <p class="splash-sub">Organize as atividades da semana (segunda a sexta) de forma visual e acessível para estudantes com TEA e TDAH.</p>
   </div>
   <div class="mode-grid" style="grid-template-columns: 1fr 1fr;">
     <div class="mode-btn" onclick="goMode('professor')">
@@ -517,11 +564,14 @@ html, body {
     <a class="home-link" href="index.html" title="Voltar ao início">🏠</a> <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
     <div>
       <div class="topbar-title">📅 Montar Rotina</div>
-      <div class="topbar-sub">Adicione as atividades do dia</div>
+      <div class="topbar-sub">Adicione as atividades de cada dia</div>
     </div>
     <div style="width:60px"></div>
   </div>
   <div class="content">
+
+    <div class="section-title">Dia da semana</div>
+    <div class="dia-tabs" id="diaTabsProf"></div>
 
     <div class="section-title">Nova atividade</div>
     <div class="add-form">
@@ -597,7 +647,8 @@ html, body {
     <div style="width:60px"></div>
   </div>
   <div class="content">
-    <div id="confettiMsg" class="confetti-msg">🎉 Você concluiu todas as atividades de hoje!</div>
+    <div class="dia-tabs" id="diaTabsAluno"></div>
+    <div id="confettiMsg" class="confetti-msg">🎉 Você concluiu todas as atividades deste dia!</div>
 
     <div class="progresso-geral">
       <div class="progresso-label">
@@ -624,6 +675,9 @@ html, body {
     <div style="width:60px"></div>
   </div>
   <div class="content">
+
+    <div class="section-title">Dia da semana</div>
+    <div class="dia-tabs" id="diaTabsProprio"></div>
 
     <!-- Opção: carregar rotina do professor -->
     <div class="section-title">Carregar rotina do professor (opcional)</div>
@@ -672,16 +726,46 @@ html, body {
 
 <script>
 // ============ ESTADO ============
-let atividades = [];
+const DIAS = [
+  { id: 'seg', nome: 'Segunda', curta: 'SEG' },
+  { id: 'ter', nome: 'Terça',   curta: 'TER' },
+  { id: 'qua', nome: 'Quarta',  curta: 'QUA' },
+  { id: 'qui', nome: 'Quinta',  curta: 'QUI' },
+  { id: 'sex', nome: 'Sexta',   curta: 'SEX' }
+];
+
+function semanaVazia() {
+  return { seg: [], ter: [], qua: [], qui: [], sex: [] };
+}
+
+// Se o professor salvou no formato antigo (lista única, sem dias), converte pro novo formato
+function normalizarSemana(dados) {
+  if (Array.isArray(dados)) return { ...semanaVazia(), seg: dados };
+  return { ...semanaVazia(), ...dados };
+}
+
+function diaDeHojeId() {
+  const mapa = { 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex' };
+  return mapa[new Date().getDay()] || 'seg'; // fim de semana cai em segunda
+}
+
+let atividadesSemana = semanaVazia();
+let diaProfAtivo = 'seg';
 let salaAtual = null;
 let timers = {};
-let atividadesProprias = [];
+
+let atividadesPropriasSemana = semanaVazia();
+let diaPropriaAtivo = 'seg';
 
 // Carregar atividades próprias salvas
 try {
   const salvas = localStorage.getItem('rotina_propria');
-  if (salvas) atividadesProprias = JSON.parse(salvas);
+  if (salvas) atividadesPropriasSemana = normalizarSemana(JSON.parse(salvas));
 } catch(e) {}
+
+// Estado da visualização do aluno (recebida do professor ou da própria semana)
+let runtimeSemana = null;
+let diaAlunoAtivo = 'seg';
 
 // ============ NAVEGAÇÃO ============
 function goMode(mode) {
@@ -699,6 +783,20 @@ function atualizarEmoji() {
   if (!custom.value) custom.placeholder = opt.dataset.emoji;
 }
 
+function trocarDiaProf(diaId) {
+  diaProfAtivo = diaId;
+  renderListaProf();
+}
+
+function renderDiaTabsProf() {
+  document.getElementById('diaTabsProf').innerHTML = DIAS.map(d => `
+    <button class="dia-tab ${d.id === diaProfAtivo ? 'active' : ''}" onclick="trocarDiaProf('${d.id}')">
+      ${d.curta}
+      ${atividadesSemana[d.id].length ? `<span class="badge-count">${atividadesSemana[d.id].length}</span>` : ''}
+    </button>
+  `).join('');
+}
+
 function adicionarAtividade() {
   const nome = document.getElementById('nomeAtividade').value.trim();
   if (!nome) { alert('Digite o nome da atividade!'); return; }
@@ -711,7 +809,7 @@ function adicionarAtividade() {
   const duracao = parseInt(document.getElementById('duracaoMin').value) || 50;
   const horario = document.getElementById('horarioInicio').value;
 
-  atividades.push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value });
+  atividadesSemana[diaProfAtivo].push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value });
 
   // Limpar campos
   document.getElementById('nomeAtividade').value = '';
@@ -721,60 +819,65 @@ function adicionarAtividade() {
 }
 
 function removerAtividade(id) {
-  atividades = atividades.filter(a => a.id !== id);
+  atividadesSemana[diaProfAtivo] = atividadesSemana[diaProfAtivo].filter(a => a.id !== id);
   renderListaProf();
 }
 
 function moverAtividade(id, dir) {
-  const idx = atividades.findIndex(a => a.id === id);
+  const lista = atividadesSemana[diaProfAtivo];
+  const idx = lista.findIndex(a => a.id === id);
   const novo = idx + dir;
-  if (novo < 0 || novo >= atividades.length) return;
-  [atividades[idx], atividades[novo]] = [atividades[novo], atividades[idx]];
+  if (novo < 0 || novo >= lista.length) return;
+  [lista[idx], lista[novo]] = [lista[novo], lista[idx]];
   renderListaProf();
 }
 
 function renderListaProf() {
+  renderDiaTabsProf();
+
   const lista = document.getElementById('listaProf');
   const label = document.getElementById('listaLabel');
   const share = document.getElementById('shareSection');
+  const diaAtual = DIAS.find(d => d.id === diaProfAtivo);
+  const itensDoDia = atividadesSemana[diaProfAtivo];
+  const semanaTemAlgumaAtividade = Object.values(atividadesSemana).some(arr => arr.length);
 
-  if (!atividades.length) {
-    lista.innerHTML = '';
-    label.style.display = 'none';
-    share.style.display = 'none';
-    return;
+  label.textContent = `Rotina de ${diaAtual.nome}-feira`;
+  label.style.display = 'block';
+  share.style.display = semanaTemAlgumaAtividade ? 'block' : 'none';
+
+  if (!itensDoDia.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade em ${diaAtual.nome}-feira ainda</div></div>`;
+  } else {
+    lista.innerHTML = itensDoDia.map((a, i) => `
+      <div class="atividade-card" style="border-left-color: ${a.cor}">
+        <div class="atividade-emoji">${a.emoji}</div>
+        <div class="atividade-info">
+          <div class="atividade-nome">${a.nome}</div>
+          <div class="atividade-duracao">⏱ ${a.duracao} min · ${a.horario ? '🕐 ' + a.horario : ''}</div>
+        </div>
+        <div class="atividade-actions">
+          ${i > 0 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, -1)">↑</button>` : ''}
+          ${i < itensDoDia.length-1 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, 1)">↓</button>` : ''}
+          <button class="btn-icon" onclick="removerAtividade(${a.id})">🗑</button>
+        </div>
+      </div>
+    `).join('');
   }
 
-  label.style.display = 'block';
-  share.style.display = 'block';
-
-  // Gerar código de sala se ainda não existe
-  if (!salaAtual) {
+  // Gerar código de sala se ainda não existe (assim que a primeira atividade da semana é criada)
+  if (semanaTemAlgumaAtividade && !salaAtual) {
     salaAtual = 'ROT' + Math.random().toString(36).substring(2,6).toUpperCase();
     document.getElementById('codigoSala').textContent = salaAtual;
   }
-
-  lista.innerHTML = atividades.map((a, i) => `
-    <div class="atividade-card" style="border-left-color: ${a.cor}">
-      <div class="atividade-emoji">${a.emoji}</div>
-      <div class="atividade-info">
-        <div class="atividade-nome">${a.nome}</div>
-        <div class="atividade-duracao">⏱ ${a.duracao} min · ${a.horario ? '🕐 ' + a.horario : ''}</div>
-      </div>
-      <div class="atividade-actions">
-        ${i > 0 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, -1)">↑</button>` : ''}
-        ${i < atividades.length-1 ? `<button class="btn-icon" onclick="moverAtividade(${a.id}, 1)">↓</button>` : ''}
-        <button class="btn-icon" onclick="removerAtividade(${a.id})">🗑</button>
-      </div>
-    </div>
-  `).join('');
 }
 
 function compartilharRotina() {
-  if (!atividades.length) { alert('Adicione pelo menos uma atividade!'); return; }
-  // Salvar no localStorage com código da sala
-  localStorage.setItem('rotina_' + salaAtual, JSON.stringify(atividades));
-  alert(`Rotina salva! Código para os alunos: ${salaAtual}\n\nOs alunos devem abrir este app e digitar o código: ${salaAtual}`);
+  const semanaTemAlgumaAtividade = Object.values(atividadesSemana).some(arr => arr.length);
+  if (!semanaTemAlgumaAtividade) { alert('Adicione pelo menos uma atividade em algum dia!'); return; }
+  // Salvar no localStorage com código da sala — a semana inteira, não só um dia
+  localStorage.setItem('rotina_' + salaAtual, JSON.stringify(atividadesSemana));
+  alert(`Rotina da semana salva! Código para os alunos: ${salaAtual}\n\nOs alunos devem abrir este app e digitar o código: ${salaAtual}`);
 }
 
 // ============ ALUNO ============
@@ -788,108 +891,131 @@ function entrarRotina() {
     return;
   }
 
-  const rotinaAluno = JSON.parse(data).map(a => ({ ...a, concluida: false, timerAtivo: false, tempoRestante: a.duracao * 60 }));
-  renderRotinAluno(rotinaAluno, codigo);
+  const semana = normalizarSemana(JSON.parse(data));
+  iniciarVisualizacaoSemana(semana, `📅 Sala: ${codigo}`);
   goMode('aluno-rotina');
 }
 
-function renderRotinAluno(rotina, codigo) {
-  // Parar timers existentes
+// Monta o estado de execução (concluída/timer/tempo restante) para a semana inteira
+// e abre já no dia de hoje (ou segunda, se hoje for fim de semana)
+function iniciarVisualizacaoSemana(semana, tituloTela) {
   Object.values(timers).forEach(t => clearInterval(t));
   timers = {};
 
-  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  document.getElementById('alunoSub').textContent = hoje;
-  document.getElementById('alunoTitulo').textContent = `📅 Sala: ${codigo}`;
+  runtimeSemana = {};
+  DIAS.forEach(d => {
+    runtimeSemana[d.id] = (semana[d.id] || []).map(a => ({ ...a, concluida: false, timerAtivo: false, tempoRestante: a.duracao * 60 }));
+  });
 
+  diaAlunoAtivo = diaDeHojeId();
+  document.getElementById('alunoTitulo').textContent = tituloTela;
+
+  renderDiaTabsAluno();
+  renderDiaAluno();
+}
+
+function trocarDiaAluno(diaId) {
+  diaAlunoAtivo = diaId;
+  renderDiaTabsAluno();
+  renderDiaAluno();
+}
+
+function renderDiaTabsAluno() {
+  document.getElementById('diaTabsAluno').innerHTML = DIAS.map(d => `
+    <button class="dia-tab ${d.id === diaAlunoAtivo ? 'active' : ''}" onclick="trocarDiaAluno('${d.id}')">
+      ${d.curta}
+      ${runtimeSemana[d.id].length ? `<span class="badge-count">${runtimeSemana[d.id].length}</span>` : ''}
+    </button>
+  `).join('');
+}
+
+function renderDiaAluno() {
+  const diaAtual = DIAS.find(d => d.id === diaAlunoAtivo);
+  const rotina = runtimeSemana[diaAlunoAtivo];
+
+  document.getElementById('alunoSub').textContent = diaAtual.nome + '-feira';
   atualizarProgressoGeral(rotina);
+
+  const todasConcluidas = rotina.length > 0 && rotina.every(a => a.concluida);
+  document.getElementById('confettiMsg').style.display = todasConcluidas ? 'block' : 'none';
 
   const lista = document.getElementById('listaAluno');
 
   if (!rotina.length) {
-    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade encontrada</div></div>`;
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade em ${diaAtual.nome}-feira</div></div>`;
     return;
   }
 
-  function renderCards() {
-    atualizarProgressoGeral(rotina);
-    const todasConcluidas = rotina.every(a => a.concluida);
-    document.getElementById('confettiMsg').style.display = todasConcluidas ? 'block' : 'none';
+  lista.innerHTML = rotina.map((a, i) => {
+    const pct = Math.round((1 - a.tempoRestante / (a.duracao * 60)) * 100);
+    const min = Math.floor(a.tempoRestante / 60);
+    const seg = a.tempoRestante % 60;
+    const tempoStr = `${min}:${seg.toString().padStart(2,'0')}`;
 
-    lista.innerHTML = rotina.map((a, i) => {
-      const pct = Math.round((1 - a.tempoRestante / (a.duracao * 60)) * 100);
-      const min = Math.floor(a.tempoRestante / 60);
-      const seg = a.tempoRestante % 60;
-      const tempoStr = `${min}:${seg.toString().padStart(2,'0')}`;
-
-      return `
-        <div class="aluno-card ${a.concluida ? 'concluida' : ''}" style="border-left-color: ${a.concluida ? '#d1d5db' : a.cor}">
-          <div class="aluno-card-top">
-            <div class="aluno-emoji">${a.emoji}</div>
-            <div class="aluno-info">
-              <div class="aluno-nome">${a.nome}</div>
-              <div class="aluno-tempo-restante">${a.concluida ? '✅ Concluída' : (a.timerAtivo ? '⏳ ' + tempoStr + ' restantes' : '⏱ ' + a.duracao + ' min · ' + (a.horario || ''))}</div>
-            </div>
-            <button class="check-btn ${a.concluida ? 'done' : ''}" onclick="toggleConcluida(${i})">
-              ${a.concluida ? '✓' : '○'}
-            </button>
+    return `
+      <div class="aluno-card ${a.concluida ? 'concluida' : ''}" style="border-left-color: ${a.concluida ? '#d1d5db' : a.cor}">
+        <div class="aluno-card-top">
+          <div class="aluno-emoji">${a.emoji}</div>
+          <div class="aluno-info">
+            <div class="aluno-nome">${a.nome}</div>
+            <div class="aluno-tempo-restante">${a.concluida ? '✅ Concluída' : (a.timerAtivo ? '⏳ ' + tempoStr + ' restantes' : '⏱ ' + a.duracao + ' min · ' + (a.horario || ''))}</div>
           </div>
-          ${!a.concluida ? `
-            <div class="timer-bar">
-              <div class="timer-fill" style="width:${pct}%; background: ${a.cor};"></div>
-            </div>
-            <div class="timer-label">
-              <span>${pct}% concluído</span>
-              <span>${tempoStr}</span>
-            </div>
-            <button class="btn-timer ${a.timerAtivo ? 'ativo' : ''}" onclick="toggleTimer(${i})">
-              ${a.timerAtivo ? '⏸ Pausar temporizador' : '▶ Iniciar temporizador'}
-            </button>
-          ` : ''}
+          <button class="check-btn ${a.concluida ? 'done' : ''}" onclick="toggleConcluida(${i})">
+            ${a.concluida ? '✓' : '○'}
+          </button>
         </div>
-      `;
-    }).join('');
-  }
+        ${!a.concluida ? `
+          <div class="timer-bar">
+            <div class="timer-fill" style="width:${pct}%; background: ${a.cor};"></div>
+          </div>
+          <div class="timer-label">
+            <span>${pct}% concluído</span>
+            <span>${tempoStr}</span>
+          </div>
+          <button class="btn-timer ${a.timerAtivo ? 'ativo' : ''}" onclick="toggleTimer(${i})">
+            ${a.timerAtivo ? '⏸ Pausar temporizador' : '▶ Iniciar temporizador'}
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
 
-  function toggleConcluida(idx) {
-    // Parar timer se estiver ativo
-    if (timers[idx]) { clearInterval(timers[idx]); delete timers[idx]; }
-    rotina[idx].concluida = !rotina[idx].concluida;
+function toggleConcluida(idx) {
+  const chave = diaAlunoAtivo + '_' + idx;
+  if (timers[chave]) { clearInterval(timers[chave]); delete timers[chave]; }
+  const rotina = runtimeSemana[diaAlunoAtivo];
+  rotina[idx].concluida = !rotina[idx].concluida;
+  rotina[idx].timerAtivo = false;
+  renderDiaAluno();
+}
+
+function toggleTimer(idx) {
+  const diaDoTimer = diaAlunoAtivo; // fixa o dia no momento do clique
+  const chave = diaDoTimer + '_' + idx;
+  const rotina = runtimeSemana[diaDoTimer];
+
+  if (rotina[idx].timerAtivo) {
+    clearInterval(timers[chave]);
+    delete timers[chave];
     rotina[idx].timerAtivo = false;
-    renderCards();
+  } else {
+    rotina[idx].timerAtivo = true;
+    timers[chave] = setInterval(() => {
+      if (rotina[idx].tempoRestante <= 0) {
+        clearInterval(timers[chave]);
+        delete timers[chave];
+        rotina[idx].timerAtivo = false;
+        rotina[idx].tempoRestante = 0;
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      } else {
+        rotina[idx].tempoRestante--;
+      }
+      // Só redesenha a tela se o aluno ainda estiver olhando esse mesmo dia
+      if (diaAlunoAtivo === diaDoTimer) renderDiaAluno();
+    }, 1000);
   }
-
-  function toggleTimer(idx) {
-    if (rotina[idx].timerAtivo) {
-      // Pausar
-      clearInterval(timers[idx]);
-      delete timers[idx];
-      rotina[idx].timerAtivo = false;
-    } else {
-      // Iniciar
-      rotina[idx].timerAtivo = true;
-      timers[idx] = setInterval(() => {
-        if (rotina[idx].tempoRestante <= 0) {
-          clearInterval(timers[idx]);
-          delete timers[idx];
-          rotina[idx].timerAtivo = false;
-          rotina[idx].tempoRestante = 0;
-          // Vibrar se disponível
-          if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
-        } else {
-          rotina[idx].tempoRestante--;
-        }
-        renderCards();
-      }, 1000);
-    }
-    renderCards();
-  }
-
-  // Expor funções globalmente
-  window.toggleConcluida = toggleConcluida;
-  window.toggleTimer = toggleTimer;
-
-  renderCards();
+  renderDiaAluno();
 }
 
 function atualizarProgressoGeral(rotina) {
@@ -908,21 +1034,40 @@ function atualizarEmojiProprio() {
   if (!custom.value) custom.placeholder = opt.dataset.emoji;
 }
 
+function trocarDiaProprio(diaId) {
+  diaPropriaAtivo = diaId;
+  renderListaProprio();
+}
+
+function renderDiaTabsProprio() {
+  document.getElementById('diaTabsProprio').innerHTML = DIAS.map(d => `
+    <button class="dia-tab ${d.id === diaPropriaAtivo ? 'active' : ''}" onclick="trocarDiaProprio('${d.id}')">
+      ${d.curta}
+      ${atividadesPropriasSemana[d.id].length ? `<span class="badge-count">${atividadesPropriasSemana[d.id].length}</span>` : ''}
+    </button>
+  `).join('');
+}
+
 function carregarDoProf() {
   const codigo = document.getElementById('codigoProf').value.trim().toUpperCase();
   if (codigo.length < 3) { alert('Digite um código válido!'); return; }
   const data = localStorage.getItem('rotina_' + codigo);
   if (!data) { alert('Código não encontrado! Verifique com seu professor.'); return; }
-  const rotinaProf = JSON.parse(data);
-  // Adicionar marcador de origem
-  const novas = rotinaProf.map(a => ({ ...a, origem: 'professor', id: Date.now() + Math.random() }));
-  // Evitar duplicatas simples por nome
-  const nomesExistentes = atividadesProprias.map(a => a.nome.toLowerCase());
-  const paraAdicionar = novas.filter(a => !nomesExistentes.includes(a.nome.toLowerCase()));
-  atividadesProprias = [...atividadesProprias, ...paraAdicionar];
+  const semanaProf = normalizarSemana(JSON.parse(data));
+
+  let totalAdicionadas = 0;
+  DIAS.forEach(d => {
+    const nomesExistentes = atividadesPropriasSemana[d.id].map(a => a.nome.toLowerCase());
+    const novas = (semanaProf[d.id] || [])
+      .map(a => ({ ...a, origem: 'professor', id: Date.now() + Math.random() }))
+      .filter(a => !nomesExistentes.includes(a.nome.toLowerCase()));
+    atividadesPropriasSemana[d.id] = [...atividadesPropriasSemana[d.id], ...novas];
+    totalAdicionadas += novas.length;
+  });
+
   salvarProprias();
   renderListaProprio();
-  alert(`✅ ${paraAdicionar.length} atividade(s) carregada(s) do professor!`);
+  alert(`✅ ${totalAdicionadas} atividade(s) carregada(s) do professor, em todos os dias!`);
 }
 
 function adicionarAtivProprio() {
@@ -935,7 +1080,7 @@ function adicionarAtivProprio() {
   const cor = opt.dataset.cor;
   const duracao = parseInt(document.getElementById('duracaoMinProprio').value) || 50;
   const horario = document.getElementById('horarioInicioProprio').value;
-  atividadesProprias.push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value, origem: 'aluno' });
+  atividadesPropriasSemana[diaPropriaAtivo].push({ id: Date.now(), nome, emoji, cor, duracao, horario, tipo: sel.value, origem: 'aluno' });
   document.getElementById('nomeAtivPropio').value = '';
   document.getElementById('emojiCustomProprio').value = '';
   salvarProprias();
@@ -943,40 +1088,45 @@ function adicionarAtivProprio() {
 }
 
 function removerAtivProprio(id) {
-  atividadesProprias = atividadesProprias.filter(a => a.id !== id);
+  atividadesPropriasSemana[diaPropriaAtivo] = atividadesPropriasSemana[diaPropriaAtivo].filter(a => a.id !== id);
   salvarProprias();
   renderListaProprio();
 }
 
 function moverAtivProprio(id, dir) {
-  const idx = atividadesProprias.findIndex(a => a.id === id);
+  const lista = atividadesPropriasSemana[diaPropriaAtivo];
+  const idx = lista.findIndex(a => a.id === id);
   const novo = idx + dir;
-  if (novo < 0 || novo >= atividadesProprias.length) return;
-  [atividadesProprias[idx], atividadesProprias[novo]] = [atividadesProprias[novo], atividadesProprias[idx]];
+  if (novo < 0 || novo >= lista.length) return;
+  [lista[idx], lista[novo]] = [lista[novo], lista[idx]];
   salvarProprias();
   renderListaProprio();
 }
 
 function salvarProprias() {
-  localStorage.setItem('rotina_propria', JSON.stringify(atividadesProprias));
+  localStorage.setItem('rotina_propria', JSON.stringify(atividadesPropriasSemana));
 }
 
 function renderListaProprio() {
+  renderDiaTabsProprio();
+
   const lista = document.getElementById('listaProprio');
   const label = document.getElementById('listaLabelProprio');
   const btnIniciar = document.getElementById('btnIniciarProprio');
+  const diaAtual = DIAS.find(d => d.id === diaPropriaAtivo);
+  const itensDoDia = atividadesPropriasSemana[diaPropriaAtivo];
+  const semanaTemAlgumaAtividade = Object.values(atividadesPropriasSemana).some(arr => arr.length);
 
-  if (!atividadesProprias.length) {
-    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade ainda.<br>Adicione acima ou carregue do professor.</div></div>';
-    label.style.display = 'none';
-    btnIniciar.style.display = 'none';
+  label.textContent = `Minha rotina de ${diaAtual.nome}-feira`;
+  label.style.display = 'block';
+  btnIniciar.style.display = semanaTemAlgumaAtividade ? 'block' : 'none';
+
+  if (!itensDoDia.length) {
+    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Nenhuma atividade neste dia ainda.<br>Adicione acima ou carregue do professor.</div></div>';
     return;
   }
 
-  label.style.display = 'block';
-  btnIniciar.style.display = 'block';
-
-  lista.innerHTML = atividadesProprias.map((a, i) => `
+  lista.innerHTML = itensDoDia.map((a, i) => `
     <div class="atividade-card" style="border-left-color: ${a.cor}">
       <div class="atividade-emoji">${a.emoji}</div>
       <div class="atividade-info">
@@ -985,7 +1135,7 @@ function renderListaProprio() {
       </div>
       <div class="atividade-actions">
         ${i > 0 ? `<button class="btn-icon" onclick="moverAtivProprio(${a.id}, -1)">↑</button>` : ''}
-        ${i < atividadesProprias.length-1 ? `<button class="btn-icon" onclick="moverAtivProprio(${a.id}, 1)">↓</button>` : ''}
+        ${i < itensDoDia.length-1 ? `<button class="btn-icon" onclick="moverAtivProprio(${a.id}, 1)">↓</button>` : ''}
         <button class="btn-icon" onclick="removerAtivProprio(${a.id})">🗑</button>
       </div>
     </div>
@@ -993,15 +1143,16 @@ function renderListaProprio() {
 }
 
 function iniciarRotinaPropria() {
-  if (!atividadesProprias.length) { alert('Adicione pelo menos uma atividade!'); return; }
-  renderRotinAluno(atividadesProprias.map(a => ({ ...a, concluida: false, timerAtivo: false, tempoRestante: a.duracao * 60 })), 'Minha Rotina');
+  const semanaTemAlgumaAtividade = Object.values(atividadesPropriasSemana).some(arr => arr.length);
+  if (!semanaTemAlgumaAtividade) { alert('Adicione pelo menos uma atividade em algum dia!'); return; }
+  iniciarVisualizacaoSemana(atividadesPropriasSemana, '📅 Minha Rotina');
   goMode('aluno-rotina');
-  document.getElementById('alunoTitulo').textContent = '📅 Minha Rotina';
 }
 
 // Init
 atualizarEmoji();
 atualizarEmojiProprio();
+renderListaProf();
 renderListaProprio();
 </script>
 </body>
