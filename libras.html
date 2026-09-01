@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Legendas em LIBRAS — Sem Barreiras</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --border: #2a2a3a;
+  --accent: #4f8ef7;
+  --accent2: #a78bfa;
+  --text: #f0f0f8;
+  --muted: #888;
+  --green: #22c55e;
+  --red: #ef4444;
+}
+
+html, body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* SPLASH */
+#splash {
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.logo { font-size: 4rem; }
+
+.splash-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.splash-sub { font-size: 0.9rem; color: var(--muted); max-width: 320px; line-height: 1.6; }
+
+.mode-cards { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 340px; }
+
+.mode-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 1.4rem 1.6rem;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.mode-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.mode-icon { font-size: 2rem; flex-shrink: 0; }
+.mode-label { font-size: 1rem; font-weight: 800; }
+.mode-desc { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+.warning-box {
+  background: #1a1a0a;
+  border: 1px solid #b45309;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+/* TOPBAR */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.topbar-title { font-size: 0.9rem; font-weight: 800; }
+.topbar-sub { font-size: 0.72rem; color: var(--muted); }
+
+.back-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.home-link {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* TELA PROFESSOR */
+#professor { flex-direction: column; }
+
+.content { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+.sala-box {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sala-code { font-size: 1.6rem; font-weight: 900; letter-spacing: 0.2em; color: var(--accent); }
+.sala-hint { font-size: 0.72rem; color: var(--muted); }
+
+.preview-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.preview-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 0.6rem; }
+#previewText { font-size: 1rem; line-height: 1.7; }
+#interimText { color: var(--muted); font-style: italic; }
+
+.controls { display: flex; gap: 0.8rem; }
+
+.btn-main {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 14px;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.btn-main:active { transform: scale(0.97); }
+.btn-start { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+.btn-stop { background: var(--red); color: white; }
+
+.btn-clear {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  padding: 1rem 1.2rem;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* TELA ALUNO LIBRAS */
+#aluno { flex-direction: column; }
+
+.aluno-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.8rem;
+  overflow: hidden;
+}
+
+/* Avatar VLibras */
+.vlibras-container {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 300px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vlibras-placeholder {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+}
+
+.vlibras-placeholder .icon { font-size: 4rem; margin-bottom: 0.5rem; }
+.vlibras-placeholder .txt { font-size: 0.85rem; line-height: 1.6; }
+
+/* Texto atual */
+.texto-atual {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+}
+
+.texto-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 0.4rem; }
+#textoAtualDisplay { font-size: 1rem; font-weight: 700; line-height: 1.5; min-height: 1.5em; }
+
+.fila-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem 1.2rem;
+}
+
+.fila-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 0.3rem; }
+#filaDisplay { font-size: 0.82rem; color: var(--muted); line-height: 1.5; min-height: 1em; }
+
+/* Entrada de código */
+.entrada-codigo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-width: 300px;
+  margin: 0 auto;
+  text-align: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.codigo-input {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  outline: none;
+  color: var(--text);
+}
+
+.codigo-input:focus { border-color: var(--accent); }
+
+.btn-entrar {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="logo">🤟</div>
+  <div>
+    <div class="splash-title">Legendas em LIBRAS</div>
+    <p class="splash-sub">Transcrição da fala do professor convertida em tempo real para LIBRAS via avatar animado.</p>
+  </div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="goMode('professor')">
+      <div class="mode-icon">🎤</div>
+      <div>
+        <div class="mode-label">Sou Professor(a)</div>
+        <div class="mode-desc">Falo — o avatar sinaliza em LIBRAS</div>
+      </div>
+    </div>
+    <div class="mode-card" onclick="goMode('aluno-entrada')">
+      <div class="mode-icon">🤟</div>
+      <div>
+        <div class="mode-label">Sou Aluno(a) Surdo(a)</div>
+        <div class="mode-desc">Vejo o avatar sinalizando em LIBRAS</div>
+      </div>
+    </div>
+  </div>
+  <div class="warning-box">
+    ⚠️ Use <strong>Google Chrome</strong>. Professor e aluno precisam estar na <strong>mesma rede ou com internet</strong>.
+  </div>
+</div>
+
+<!-- TELA PROFESSOR -->
+<div id="professor" class="screen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.5rem">
+      <a class="home-link" href="index.html">🏠</a>
+      <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    </div>
+    <div>
+      <div class="topbar-title">🎤 Modo Professor</div>
+      <div class="topbar-sub">Fale normalmente</div>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusLabel">Parado</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="sala-box">
+      <div>
+        <div style="font-size:0.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Código da sala</div>
+        <div class="sala-code" id="salaCode">—</div>
+      </div>
+      <div class="sala-hint">Passe este código<br>para os alunos</div>
+    </div>
+
+    <div class="preview-box">
+      <div class="preview-label">Texto transcrito</div>
+      <div id="previewText"><span style="color:var(--muted);font-size:0.85rem">Clique em Iniciar e fale…</span></div>
+      <div id="interimText"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-main btn-start" id="btnToggle" onclick="toggleListening()">🎙️ Iniciar</button>
+      <button class="btn-clear" onclick="clearText()">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<!-- TELA ALUNO — ENTRADA -->
+<div id="aluno-entrada" class="screen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.5rem">
+      <a class="home-link" href="index.html">🏠</a>
+      <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    </div>
+    <div>
+      <div class="topbar-title">🤟 Modo Aluno</div>
+      <div class="topbar-sub">Digite o código da sala</div>
+    </div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="entrada-codigo">
+    <div style="font-size:3rem">🤟</div>
+    <div style="font-weight:800;font-size:1.1rem">Código da sala</div>
+    <input class="codigo-input" id="codigoInput" maxlength="8" placeholder="TURMA1" oninput="this.value=this.value.toUpperCase()">
+    <button class="btn-entrar" onclick="entrarAluno()">Ver LIBRAS →</button>
+  </div>
+</div>
+
+<!-- TELA ALUNO — LIBRAS -->
+<div id="aluno" class="screen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.5rem">
+      <a class="home-link" href="index.html">🏠</a>
+      <button class="back-btn" onclick="goMode('splash')">← Voltar</button>
+    </div>
+    <div>
+      <div class="topbar-title">🤟 LIBRAS ao Vivo</div>
+      <div class="topbar-sub" id="alunoSub">Aguardando professor…</div>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="alunoStatusDot"></div>
+      <span id="alunoStatusLabel">Aguardando</span>
+    </div>
+  </div>
+
+  <div class="aluno-content">
+    <!-- Avatar VLibras -->
+    <div class="vlibras-container" id="vlibrasContainer">
+      <div class="vlibras-placeholder" id="vlibrasPlaceholder">
+        <div class="icon">🤟</div>
+        <div class="txt">Aguardando o professor iniciar…<br>O avatar irá aparecer aqui e sinalizar em LIBRAS.</div>
+      </div>
+      <!-- Widget VLibras será injetado aqui -->
+      <div vw class="enabled" id="vlibrasWidget" style="display:none; width:100%; height:100%;">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+          <div class="vw-plugin-top-wrapper"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Texto atual -->
+    <div class="texto-atual">
+      <div class="texto-label">Texto sendo sinalizado</div>
+      <div id="textoAtualDisplay">—</div>
+    </div>
+
+    <!-- Fila de frases -->
+    <div class="fila-box">
+      <div class="fila-label">📋 Próximas frases</div>
+      <div id="filaDisplay">Nenhuma frase na fila</div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDJMGcPp6iz4NnjSiDU7ihqQMkTX2rqr0A",
+  authDomain: "ambient-axiom-384901.firebaseapp.com",
+  databaseURL: "https://ambient-axiom-384901-default-rtdb.firebaseio.com",
+  projectId: "ambient-axiom-384901",
+  storageBucket: "ambient-axiom-384901.firebasestorage.app",
+  messagingSenderId: "914809989128",
+  appId: "1:914809989128:web:1415bf7a139fb9899649bd"
+};
+
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getDatabase(app);
+
+// ============ ESTADO ============
+let currentSala = null;
+let recognition = null;
+let isListening = false;
+let finalPhrases = [];
+let lastResultIndex = 0;
+
+// Fila de frases para o VLibras
+let filaFrases = [];
+let sinalizando = false;
+let vlibrasCarregado = false;
+
+// ============ NAVEGAÇÃO ============
+window.goMode = function(mode) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(mode === 'aluno-entrada' ? 'aluno-entrada' : mode).classList.add('active');
+  if (mode === 'splash') { stopListening(); currentSala = null; }
+  window.scrollTo(0, 0);
+};
+
+// ============ PROFESSOR ============
+window.toggleListening = function() {
+  if (isListening) stopListening();
+  else startListening();
+};
+
+function startListening() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Use o Google Chrome!');
+    return;
+  }
+
+  // Gerar código de sala se não existe
+  if (!currentSala) {
+    currentSala = 'LIB' + Math.random().toString(36).substring(2,6).toUpperCase();
+    document.getElementById('salaCode').textContent = currentSala;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    lastResultIndex = 0;
+    document.getElementById('statusDot').classList.add('active');
+    document.getElementById('statusLabel').textContent = 'Transmitindo';
+    document.getElementById('btnToggle').textContent = '⏹ Pausar';
+    document.getElementById('btnToggle').className = 'btn-main btn-stop';
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    let newFinal = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        newFinal += t + ' ';
+      } else {
+        interim += t;
+      }
+    }
+
+    if (newFinal) {
+      const frases = newFinal.trim().split(/(?<=[.!?])\s+|(?<=\s{2,})/);
+      frases.forEach(f => {
+        const fraseLimpa = f.trim();
+        if (!fraseLimpa) return;
+        const recentes = finalPhrases.slice(-3);
+        let duplicada = false;
+        for (let j = 0; j < recentes.length; j++) {
+          const r = recentes[j];
+          if (fraseLimpa === r || r.includes(fraseLimpa) || (fraseLimpa.includes(r) && r.length > 3)) {
+            duplicada = true;
+            if (fraseLimpa.length > r.length) finalPhrases[finalPhrases.length - recentes.length + j] = fraseLimpa;
+            break;
+          }
+        }
+        if (!duplicada) finalPhrases.push(fraseLimpa);
+      });
+      if (finalPhrases.length > 50) finalPhrases = finalPhrases.slice(-50);
+
+      // Atualizar preview
+      document.getElementById('previewText').innerHTML = finalPhrases.map(f => `<p style="margin-bottom:0.4em">${f}</p>`).join('');
+      const box = document.getElementById('previewText').parentElement;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    document.getElementById('interimText').textContent = interim;
+
+    // Enviar para Firebase
+    if (currentSala) {
+      const salaRef = ref(db, `libras/${currentSala}`);
+      set(salaRef, {
+        phrases: finalPhrases,
+        interim: interim,
+        ts: Date.now()
+      });
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') alert('Permita o microfone!');
+  };
+
+  recognition.onend = () => {
+    if (isListening) setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
+  };
+
+  try { recognition.start(); } catch(e) { alert('Erro ao iniciar microfone'); }
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  document.getElementById('statusDot').classList.remove('active');
+  document.getElementById('statusLabel').textContent = 'Parado';
+  document.getElementById('btnToggle').textContent = '🎙️ Iniciar';
+  document.getElementById('btnToggle').className = 'btn-main btn-start';
+}
+
+window.clearText = function() {
+  finalPhrases = [];
+  document.getElementById('previewText').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">Clique em Iniciar e fale…</span>';
+  document.getElementById('interimText').textContent = '';
+  if (currentSala) set(ref(db, `libras/${currentSala}`), { phrases: [], interim: '', ts: Date.now() });
+};
+
+// ============ ALUNO ============
+window.entrarAluno = function() {
+  const codigo = document.getElementById('codigoInput').value.trim().toUpperCase();
+  if (codigo.length < 3) { alert('Digite um código válido!'); return; }
+  currentSala = codigo;
+  document.getElementById('alunoSub').textContent = `Sala: ${codigo}`;
+
+  // Carregar VLibras
+  carregarVLibras();
+
+  // Escutar Firebase
+  const salaRef = ref(db, `libras/${codigo}`);
+  onValue(salaRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data || !data.phrases || !data.phrases.length) return;
+
+    document.getElementById('alunoStatusDot').classList.add('active');
+    document.getElementById('alunoStatusLabel').textContent = 'Ao vivo ✓';
+
+    // Pegar apenas a última frase nova
+    const ultimaFrase = data.phrases[data.phrases.length - 1];
+    adicionarFila(ultimaFrase);
+  });
+
+  goMode('aluno');
+};
+
+// ============ VLIBRAS ============
+function carregarVLibras() {
+  if (vlibrasCarregado) return;
+  vlibrasCarregado = true;
+
+  // Carregar script do VLibras
+  const script = document.createElement('script');
+  script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
+  script.onload = () => {
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+    document.getElementById('vlibrasWidget').style.display = 'block';
+    document.getElementById('vlibrasPlaceholder').style.display = 'none';
+  };
+  document.head.appendChild(script);
+}
+
+function adicionarFila(frase) {
+  if (!frase || frase.trim() === '') return;
+
+  // Evitar duplicatas na fila
+  if (filaFrases.includes(frase)) return;
+  filaFrases.push(frase);
+  atualizarFilaDisplay();
+
+  if (!sinalizando) processarFila();
+}
+
+function atualizarFilaDisplay() {
+  const display = document.getElementById('filaDisplay');
+  if (filaFrases.length === 0) {
+    display.textContent = 'Nenhuma frase na fila';
+  } else {
+    display.innerHTML = filaFrases.map((f, i) =>
+      `<span style="opacity:${i === 0 ? 1 : 0.5}">${i === 0 ? '▶ ' : `${i}. `}${f}</span>`
+    ).join('<br>');
+  }
+}
+
+function processarFila() {
+  if (filaFrases.length === 0) {
+    sinalizando = false;
+    document.getElementById('textoAtualDisplay').textContent = '—';
+    return;
+  }
+
+  sinalizando = true;
+  const frase = filaFrases.shift();
+  atualizarFilaDisplay();
+
+  document.getElementById('textoAtualDisplay').textContent = frase;
+  document.getElementById('vlibrasPlaceholder').style.display = 'none';
+
+  // Sinalizar via VLibras
+  sinalizarVLibras(frase);
+}
+
+function sinalizarVLibras(texto) {
+  // Tentar usar a API do VLibras para sinalizar o texto
+  try {
+    // O VLibras expõe uma função global para tradução
+    if (window.VLibras && window.VLibras.translate) {
+      window.VLibras.translate(texto);
+    } else {
+      // Fallback: usar o elemento de acessibilidade do VLibras
+      const btn = document.querySelector('[vw-access-button]');
+      if (btn) {
+        // Aguardar um tempo proporcional ao tamanho do texto (150 palavras/min)
+        const palavras = texto.split(' ').length;
+        const tempo = Math.max(3000, palavras * 800);
+        setTimeout(() => {
+          processarFila();
+        }, tempo);
+      } else {
+        // Se VLibras não carregou ainda, aguardar
+        setTimeout(() => sinalizarVLibras(texto), 1000);
+      }
+    }
+  } catch(e) {
+    // Fallback com tempo estimado
+    const palavras = texto.split(' ').length;
+    setTimeout(() => processarFila(), palavras * 800);
+  }
+}
+</script>
+</body>
+</html>
