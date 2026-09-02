@@ -344,7 +344,6 @@
     display: none;
   }
 </style>
-<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
 </head>
 <body>
 
@@ -469,15 +468,27 @@
 </div>
 
 <!-- Firebase SDKs -->
-<!-- Widget VLibras oculto -->
-<div vw class="enabled" id="vlibrasWidget" style="display:none;position:fixed;bottom:0;right:0;z-index:9999;">
-  <div vw-access-button class="active"></div>
-  <div vw-plugin-wrapper>
-    <div class="vw-plugin-top-wrapper"></div>
+<!-- Modal VLibras -->
+<div id="vlibrasModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="background:#13131a;border:1.5px solid #2a2a3a;border-radius:20px;width:90%;max-width:420px;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.8rem 1.2rem;background:#1a1a2e;">
+      <div style="font-family:sans-serif;font-size:0.85rem;font-weight:700;color:#f0f0f8;">🤟 LIBRAS ao Vivo</div>
+      <button onclick="toggleLibras()" style="background:none;border:1px solid #2a2a3a;color:#888;border-radius:8px;padding:0.3rem 0.6rem;cursor:pointer;font-family:sans-serif;font-size:0.8rem;">✕ Fechar</button>
+    </div>
+    <iframe id="vlibrasIframe"
+      src="https://vlibras.gov.br/app?text=Olá"
+      width="100%"
+      height="320"
+      frameborder="0"
+      allow="autoplay"
+      style="display:block;background:#000;">
+    </iframe>
+    <div style="padding:0.8rem 1.2rem;background:#0a0a0f;">
+      <div style="font-family:sans-serif;font-size:0.72rem;color:#888;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.1em;">Texto sendo sinalizado</div>
+      <div id="vlibrasTextoAtual" style="font-family:sans-serif;font-size:0.9rem;font-weight:700;color:#f0f0f8;">—</div>
+    </div>
   </div>
 </div>
-<!-- Div oculta para injetar texto no VLibras -->
-<div id="textoVLibras" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;font-size:1px;color:transparent"> </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
@@ -512,7 +523,6 @@ let finalPhrases = []; // array de frases finalizadas
 let captionFontSize = 32;
 let lastResultIndex = 0;
 let librasAtivo = false;
-let vlibrasIniciado = false;
 let filaLibras = [];
 let sinalizando = false;
 let ultimaFraseLibras = '';
@@ -843,63 +853,33 @@ async function traduzirFrases(frases, sourceIdioma) {
 window.toggleLibras = function() {
   librasAtivo = !librasAtivo;
   const btn = document.getElementById('btnLibras');
+  const modal = document.getElementById('vlibrasModal');
 
   if (librasAtivo) {
     btn.style.background = '#22c55e';
     btn.style.color = 'white';
     btn.style.borderColor = '#22c55e';
-    iniciarVLibras();
+    modal.style.display = 'flex';
   } else {
     btn.style.background = '';
     btn.style.color = '';
     btn.style.borderColor = '';
-    document.getElementById('vlibrasWidget').style.display = 'none';
+    modal.style.display = 'none';
   }
 };
-
-function iniciarVLibras() {
-  document.getElementById('vlibrasWidget').style.display = 'block';
-
-  if (!vlibrasIniciado) {
-    vlibrasIniciado = true;
-    try {
-      new window.VLibras.Widget('https://vlibras.gov.br/app');
-      setTimeout(() => {
-        const btn = document.querySelector('[vw-access-button]');
-        if (btn) btn.click();
-      }, 1500);
-    } catch(e) {
-      console.log('VLibras:', e.message);
-    }
-  }
-}
 
 function sinalizarLibras(texto) {
   if (!librasAtivo || !texto?.trim()) return;
   if (texto === ultimaFraseLibras) return;
   ultimaFraseLibras = texto;
 
-  // Injetar texto e acionar VLibras de múltiplas formas
-  const div = document.getElementById('textoVLibras');
-  div.textContent = texto;
+  // Atualizar texto exibido
+  document.getElementById('vlibrasTextoAtual').textContent = texto;
 
-  // Selecionar o texto para o VLibras detectar
-  try {
-    const range = document.createRange();
-    range.selectNode(div);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-  } catch(e) {}
-
-  // Tentar API direta
-  try {
-    if (window.VLibras?.translate) window.VLibras.translate(texto);
-  } catch(e) {}
-
-  // postMessage para iframes do VLibras
-  document.querySelectorAll('iframe').forEach(iframe => {
-    try { iframe.contentWindow.postMessage({ type: 'translate', text: texto }, '*'); } catch(e) {}
-  });
+  // Recarregar iframe com novo texto — forma mais confiável de acionar o VLibras
+  const iframe = document.getElementById('vlibrasIframe');
+  const textoEncoded = encodeURIComponent(texto);
+  iframe.src = `https://vlibras.gov.br/app?text=${textoEncoded}`;
 }
 
 window.changeFontSize = function(delta) {
